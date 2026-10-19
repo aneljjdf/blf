@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>0.07%</title>
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23ffffff'/%3E%3Cline x1='20' y1='50' x2='80' y2='50' stroke='%23000000' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=EB+Garamond:wght@400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --c-black: #000;
+    --c-ink: #111;
+    --c-grey: #888;
+    --c-light: #bbb;
+    --c-line: #e5e5e5;
+    --ease: cubic-bezier(.2, 0, 0, 1);
+    --dur: 200ms;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+    overflow-anchor: none;
+    overscroll-behavior: none;
+  }
+  html.viewer-lock,
+  html.viewer-lock body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+  body {
+    background: #fff; color: var(--c-ink);
+    font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  /* 隐藏滚动条（全局） */
+  ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+  * { scrollbar-width: none; -ms-overflow-style: none; }
+
+  /* 顶栏 */
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff;
+    display: flex; align-items: center; padding: 22px 40px;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .header-left {
+    font-size: 15px; font-weight: 500; letter-spacing: 0.04em;
+    cursor: pointer; color: var(--c-black);
+  }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .header-meta {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.18em;
+    color: var(--c-grey); text-transform: uppercase;
+  }
+  .header-dot { font-size: 10px; color: var(--c-light); }
+
+  .nav-links { display: flex; align-items: center; gap: 36px; margin-left: 48px; }
+  .nav-links span {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.18em; color: var(--c-light);
+    text-transform: uppercase; cursor: pointer; transition: color var(--dur) var(--ease); padding: 3px 0;
+  }
+  .nav-links span:hover { color: var(--c-ink); }
+  .nav-links span.active { color: var(--c-black); }
+
+  @media (max-width: 768px) {
+    .site-header { padding: 16px 20px; flex-wrap: wrap; gap: 12px; }
+    .nav-links { margin-left: 0; gap: 24px; }
+  }
+
+  /* 页面切换 */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+
+  /* ABOUT */
+  #page-about { padding-top: 80px; }
+  .about-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 18vh 8vw 24vh;
+  }
+  .about-title {
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 96px;
+    color: var(--c-black);
+  }
+  .about-text-block { margin-bottom: 56px; max-width: 560px; }
+  .about-text-block p {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: 2.2;
+    color: var(--c-ink);
+  }
+
+  /* INDEX */
+  #page-gallery { padding-top: 80px; }
+  .index-block {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14vh 8vw 20vh;
+  }
+  .index-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    color: var(--c-grey);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  .index-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 10px;
+  }
+  .index-grid a {
+    display: block; padding: 12px 8px; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--c-light); text-decoration: none; font-variant-numeric: tabular-nums;
+    text-align: center; border: 1px solid transparent;
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .index-grid a:hover { color: var(--c-black); border-color: var(--c-ink); }
+  .index-grid a.visited { color: var(--c-black); }
+
+  /* ============================================================
+     单条视图：整屏可滑，锁定边缘手势，无滚动条
+     ============================================================ */
+  .viewer-overlay {
+    position: fixed; inset: 0; background: #fff; z-index: 200;
+    display: none; flex-direction: column;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+  }
+  .viewer-overlay.active { display: flex; }
+
+  .viewer-close {
+    position: fixed;
+    top: 26px;
+    right: 40px;
+    z-index: 30;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: var(--c-ink);
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 0;
+    opacity: 0.8;
+    transition: opacity var(--dur) var(--ease);
+  }
+  .viewer-close:hover { opacity: 1; }
+
+  .viewer-content {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 110px 8vw 90px;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  .specimen {
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%;
+    max-width: 620px;
+    padding: 0 0 24px;
+    transition: opacity 280ms var(--ease), transform 280ms var(--ease);
+    will-change: opacity, transform;
+  }
+  .specimen.is-switching {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  .specimen img {
+    max-width: 100%;
+    max-height: 62vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    user-select: none; pointer-events: auto; cursor: pointer;
+    transition: opacity 280ms var(--ease);
+  }
+
+  .specimen-meta {
+    margin-top: 28px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    max-width: 360px;
+  }
+  .specimen-note {
+    font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--c-ink);
+    line-height: 1.8;
+    margin-bottom: 4px;
+  }
+  .specimen-note::before {
+    content: "— ";
+    color: var(--c-grey);
+  }
+  .specimen-brand {
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--c-ink);
+    text-transform: uppercase;
+  }
+  .specimen-season {
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--c-grey);
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  @media (max-width: 768px) {
+    .viewer-content { padding: 72px 6vw 72px; }
+    .specimen { max-width: 100%; }
+    .specimen img { max-width: 100%; max-height: 52vh; }
+    .viewer-close { top: 20px; right: 20px; }
+    .about-title { font-size: 32px; }
+    .about-container { padding: 14vh 8vw 18vh; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="site-header" id="siteHeader">
+    <div class="header-left" onclick="switchPage('about')">0.07%</div>
+    <nav class="nav-links">
+      <span id="nav-about" class="active" onclick="switchPage('about')">ABOUT</span>
+      <span id="nav-gallery" onclick="switchPage('gallery')">COLLECTION</span>
+    </nav>
+    <div class="header-right">
+      <span class="header-meta">ARCHIVE</span>
+      <span class="header-dot">·</span>
+      <span class="header-meta">2026</span>
+    </div>
+  </header>
+
+  <section id="page-about" class="page-section active">
+    <div class="about-container">
+      <h1 class="about-title">为这个领域，划一条金线。</h1>
+      <div class="about-text-block">
+        <p>标准不散落于众口。金线不看谁声高，不看多少人附和。不需要批准，无法修改，它自身成立。</p>
+      </div>
+      <div class="about-text-block">
+        <p>金线不是被发明，而是被发现。它本来就在。此刻，它第一次在场。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-gallery" class="page-section">
+    <div class="index-block" id="indexBlock">
+      <div class="index-title">INDEX</div>
+      <div class="index-grid" id="indexGrid"></div>
+    </div>
+  </section>
+
+  <div class="viewer-overlay" id="viewerOverlay">
+    <button class="viewer-close" id="backIndex">CLOSE</button>
+    <div class="viewer-content" id="viewerContent"></div>
+  </div>
+
+<script>
+/* ===== 数据 ===== */
+const brandsData = [
+  { folder: 'avavav', name: 'AVAVAV', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '' }] },
+  { folder: 'bed-j-w-ford', name: 'BED J.W. FORD', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
+  { folder: 'botter', name: 'BOTTER', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
+  { folder: 'burc-akyol', name: 'BURC AKYOL', images: [{ file: '01.webp', season: 'SPRING 2026 READY-TO-WEAR', note: '肩宽缩小点' }] },
+  { folder: 'charles-jeffrey-loverboy', name: 'CHARLES JEFFREY LOVERBOY', images: [
+    { file: '01.webp', season: 'SPRING 2025 MENSWEAR', note: '' },
+    { file: '02.webp', season: 'FALL 2023 MENSWEAR', note: '' }
+  ]},
+  { folder: 'danielle-frankel', name: 'DANIELLE FRANKEL', images: [{ file: '01.webp', season: 'FALL 2025 READY-TO-WEAR', note: '' }] },
+  { folder: 'dries-van-noten', name: 'DRIES VAN NOTEN', images: [{ file: '01.webp', season: 'FALL 2021 MENSWEAR', note: '' }] },
+  { folder: 'eenk', name: 'EENK', images: [{ file: '01.webp', season: 'SPRING 2024 READY-TO-WEAR', note: '' }] },
+  { folder: 'feng-chen-wang', name: 'FENG CHEN WANG', images: [{ file: '01.webp', season: 'SPRING 2025 MENSWEAR', note: '' }] },
+  { folder: 'freya-dalsjo', name: 'FREYA DALSJØ', images: [
+    { file: '01.webp', season: 'COPENHAGEN SPRING 2026', note: '' },
+    { file: '02.webp', season: 'COPENHAGEN FALL 2026', note: '' }
+  ]},
+  { folder: 'harris-reed', name: 'HARRIS REED', images: [{ file: '01.webp', season: 'FALL 2022 READY-TO-WEAR', note: '头顶上的改掉' }] },
+  { folder: 'loewe', name: 'LOEWE', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '仅上衣' }] },
+  { folder: 'maison-mihara-yasuhiro', name: 'MAISON MIHARA YASUHIRO', images: [{ file: '01.webp', season: 'SPRING 2027 MENSWEAR', note: '去掉项链' }] },
+  { folder: 'matieres-fecales', name: 'MATIÈRES FÉCALES', images: [{ file: '01.webp', season: 'SPRING 2027 READY-TO-WEAR', note: '' }] },
+  { folder: 'palomo-spain', name: 'PALOMO SPAIN', images: [
+    { file: '01.webp', season: 'FALL 2023 READY-TO-WEAR', note: '' },
+    { file: '02.webp', season: 'FALL 2023 READY-TO-WEAR', note: '' },
+    { file: '03.webp', season: 'FALL 2023 READY-TO-WEAR', note: '下半身' }
+  ]},
+  { folder: 'robert-wun', name: 'ROBERT WUN', images: [
+    { file: '01.webp', season: 'SPRING 2026 COUTURE', note: '' },
+    { file: '02.webp', season: 'SPRING 2026 COUTURE', note: '' },
+    { file: '03.webp', season: 'FALL 2024 COUTURE', note: '' },
+    { file: '04.webp', season: 'SPRING 2024 COUTURE', note: '' }
+  ]},
+  { folder: 'saint-laurent', name: 'SAINT LAURENT', images: [{ file: '01.webp', season: 'SPRING 2018 READY-TO-WEAR', note: '' }] },
+  { folder: 'versace', name: 'VERSACE', images: [
+    { file: '01.webp', season: 'SPRING 2023 READY-TO-WEAR', note: '' },
+    { file: '02.webp', season: 'PRE-FALL 2024 MENSWEAR', note: '' },
+    { file: '03.webp', season: 'PRE-FALL 2024 MENSWEAR', note: '' }
+  ]},
+  { folder: 'wooyoungmi', name: 'WOOYOUNGMI', images: [
+    { file: '01.webp', season: 'FALL 2018 MENSWEAR', note: '' },
+    { file: '02.webp', season: 'FALL 2018 MENSWEAR', note: '内搭换掉' }
+  ]}
+];
+
+let allItems = [];
+brandsData.forEach(brand => {
+  brand.images.forEach(img => {
+    allItems.push({
+      src: `images/${brand.folder}/${img.file}`,
+      brand: brand.name,
+      season: img.season,
+      note: img.note
+    });
+  });
+});
+
+/* ===== 状态与元素 ===== */
+let currentIndex = -1;
+const visited = new Set();
+
+const indexGrid = document.getElementById('indexGrid');
+const viewerOverlay = document.getElementById('viewerOverlay');
+const viewerContent = document.getElementById('viewerContent');
+
+function padZero(n, w) { return n.toString().padStart(w, '0'); }
+
+function lockScroll(lock) {
+  document.documentElement.classList.toggle('viewer-lock', lock);
+}
+
+function switchPage(pageId) {
+  closeViewer();
+  window.scrollTo(0, 0);
+  document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelectorAll('.nav-links span').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + pageId).classList.add('active');
+}
+
+function renderIndex() {
+  indexGrid.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  allItems.forEach((_, i) => {
+    const a = document.createElement('a');
+    a.href = 'javascript:void(0)';
+    a.textContent = padZero(i + 1, 3);
+    a.dataset.index = i;
+    if (visited.has(i)) a.classList.add('visited');
+    frag.appendChild(a);
+  });
+  indexGrid.appendChild(frag);
+}
+
+function renderViewer(i) {
+  const item = allItems[i];
+  viewerContent.innerHTML = `
+    <div class="specimen" id="specimenEl">
+      <img src="${item.src}" alt="" draggable="false">
+      <div class="specimen-meta">
+        ${item.note ? `<div class="specimen-note">${item.note}</div>` : ''}
+        <div class="specimen-brand">${item.brand}</div>
+        <div class="specimen-season">${item.season}</div>
+      </div>
+    </div>
+  `;
+  requestAnimationFrame(() => {
+    const el = document.getElementById('specimenEl');
+    if (el) el.classList.remove('is-switching');
+  });
+}
+
+function openViewer(i) {
+  if (i < 0 || i >= allItems.length) return;
+  currentIndex = i;
+  visited.add(i);
+  renderViewer(i);
+  viewerOverlay.classList.add('active');
+  lockScroll(true);
+}
+
+function switchTo(i) {
+  if (i < 0 || i >= allItems.length || i === currentIndex) return;
+  const el = document.getElementById('specimenEl');
+  if (el) {
+    el.classList.add('is-switching');
+    setTimeout(() => {
+      currentIndex = i;
+      visited.add(i);
+      renderViewer(i);
+    }, 160);
+  } else {
+    currentIndex = i;
+    visited.add(i);
+    renderViewer(i);
+  }
+}
+
+function closeViewer() {
+  viewerOverlay.classList.remove('active');
+  lockScroll(false);
+  renderIndex();
+}
+
+function goPrev() { switchTo(currentIndex - 1); }
+function goNext() { switchTo(currentIndex + 1); }
+
+/* ===== 点击事件 ===== */
+document.addEventListener('click', e => {
+  const a = e.target.closest('.index-grid a');
+  if (a) {
+    e.preventDefault();
+    openViewer(parseInt(a.dataset.index, 10));
+    return;
+  }
+  if (e.target.closest('#backIndex')) { e.preventDefault(); closeViewer(); return; }
+});
+
+/* ===== 键盘：上下左右都能切 ===== */
+document.addEventListener('keydown', e => {
+  if (!viewerOverlay.classList.contains('active')) return;
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    goPrev();
+  } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    goNext();
+  } else if (e.key === 'Escape') {
+    closeViewer();
+  }
+});
+
+/* ===== 桌面滚轮 ===== */
+let isWheeling = false;
+document.addEventListener('wheel', e => {
+  if (!viewerOverlay.classList.contains('active')) return;
+  if (isWheeling) return;
+  if (Math.abs(e.deltaY) < 20) return;
+  isWheeling = true;
+  if (e.deltaY > 0) goNext();
+  else goPrev();
+  setTimeout(() => { isWheeling = false; }, 500);
+}, { passive: true });
+
+/* ===== 手机触摸：整屏滑动，阻止浏览器边缘返回 ===== */
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+let touchActive = false;
+
+viewerOverlay.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) return;
+  if (e.target.closest('#backIndex')) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+  touchActive = true;
+}, { passive: true });
+
+viewerOverlay.addEventListener('touchmove', e => {
+  if (!touchActive) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  // 横向滑动时阻止默认，压住浏览器边缘返回
+  if (Math.abs(dx) > Math.abs(dy)) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+viewerOverlay.addEventListener('touchend', e => {
+  if (!touchActive) return;
+  touchActive = false;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  const dt = Date.now() - touchStartTime;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (dt > 500) return;
+
+  if (absX > absY && absX > 40) {
+    if (dx < 0) goNext(); else goPrev();
+    return;
+  }
+
+  if (absY > absX && absY > 80) {
+    if (dy < 0) goNext(); else goPrev();
+  }
+}, { passive: true });
+
+/* 初始化 */
+renderIndex();
+</script>
+
+</body>
+</html>
