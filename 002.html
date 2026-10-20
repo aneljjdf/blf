@@ -45,7 +45,6 @@
   ::-webkit-scrollbar { width: 0; height: 0; display: none; }
   * { scrollbar-width: none; -ms-overflow-style: none; }
 
-  /* 顶栏 */
   .site-header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff;
     display: flex; align-items: center; padding: 22px 40px;
@@ -78,7 +77,6 @@
   .page-section { display: none; }
   .page-section.active { display: block; }
 
-  /* ABOUT */
   #page-about { padding-top: 80px; }
   .about-container {
     max-width: 720px;
@@ -102,7 +100,6 @@
     color: var(--c-ink);
   }
 
-  /* INDEX */
   #page-gallery { padding-top: 80px; }
   .index-block {
     max-width: 1100px;
@@ -132,9 +129,6 @@
   .index-grid a:hover { color: var(--c-black); border-color: var(--c-ink); }
   .index-grid a.visited { color: var(--c-black); }
 
-  /* ============================================================
-     单条视图：空白回 INDEX；无 CLOSE；只上下滑切图
-     ============================================================ */
   .viewer-overlay {
     position: fixed; inset: 0; background: #fff; z-index: 200;
     display: none; flex-direction: column;
@@ -144,12 +138,40 @@
   }
   .viewer-overlay.active { display: flex; }
 
+  .viewer-close {
+    position: fixed;
+    top: 22px;
+    right: 40px;
+    z-index: 30;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity var(--dur) var(--ease);
+    padding: 0;
+  }
+  .viewer-close:hover { opacity: 1; }
+  .viewer-close::before,
+  .viewer-close::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 1.2px;
+    background: var(--c-ink);
+  }
+  .viewer-close::before { transform: rotate(45deg); }
+  .viewer-close::after { transform: rotate(-45deg); }
+
   .viewer-content {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 110px 8vw 90px;
     overflow: hidden;
     touch-action: none;
-    cursor: pointer;
   }
 
   .specimen {
@@ -160,7 +182,7 @@
     padding: 0 0 24px;
     transition: opacity 280ms var(--ease), transform 280ms var(--ease);
     will-change: opacity, transform;
-    pointer-events: none; /* 容器不拦截点击，只有图片和品牌信息拦截 */
+    pointer-events: none;
   }
   .specimen.is-switching {
     opacity: 0;
@@ -185,7 +207,7 @@
     margin-top: 28px;
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     max-width: 360px;
-    pointer-events: auto; /* 品牌信息可点，不触发回退 */
+    pointer-events: auto;
   }
   .specimen-note {
     font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
@@ -220,6 +242,7 @@
     .viewer-content { padding: 72px 6vw 72px; }
     .specimen { max-width: 100%; }
     .specimen img { max-width: 100%; max-height: 52vh; }
+    .viewer-close { top: 16px; right: 20px; opacity: 0.35; }
     .about-title { font-size: 32px; }
     .about-container { padding: 14vh 8vw 18vh; }
   }
@@ -260,6 +283,7 @@
   </section>
 
   <div class="viewer-overlay" id="viewerOverlay">
+    <button class="viewer-close" id="backIndex" aria-label="Close"></button>
     <div class="viewer-content" id="viewerContent"></div>
   </div>
 
@@ -409,7 +433,6 @@ function closeViewer() {
 function goPrev() { switchTo(currentIndex - 1); }
 function goNext() { switchTo(currentIndex + 1); }
 
-/* 点击：只有图片和品牌信息拦截；其余空白回 INDEX */
 document.addEventListener('click', e => {
   const a = e.target.closest('.index-grid a');
   if (a) {
@@ -420,9 +443,10 @@ document.addEventListener('click', e => {
 
   if (!viewerOverlay.classList.contains('active')) return;
 
-  if (e.target.closest('.specimen img, .specimen-meta')) return;
-
-  closeViewer();
+  if (e.target.closest('#backIndex')) {
+    e.preventDefault();
+    closeViewer();
+  }
 });
 
 document.addEventListener('keydown', e => {
@@ -455,6 +479,7 @@ let touchActive = false;
 
 viewerOverlay.addEventListener('touchstart', e => {
   if (e.touches.length !== 1) return;
+  if (e.target.closest('#backIndex')) return;
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
   touchStartTime = Date.now();
@@ -485,12 +510,6 @@ viewerOverlay.addEventListener('touchend', e => {
 
   if (absY > absX && absY > 80) {
     if (dy < 0) goNext(); else goPrev();
-    return;
-  }
-
-  if (absX < 10 && absY < 10 && dt < 300) {
-    if (e.target.closest('.specimen img, .specimen-meta')) return;
-    closeViewer();
   }
 }, { passive: true });
 
