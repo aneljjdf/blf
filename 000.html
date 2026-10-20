@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>0.07%</title>
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23ffffff'/%3E%3Cline x1='20' y1='50' x2='80' y2='50' stroke='%23000000' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400&family=EB+Garamond:wght@400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --fs-1: 9px;
+    --fs-2: 10px;
+    --c-black: #000;
+    --c-grey: #999;
+    --c-line: #e5e5e5;
+    --ease: cubic-bezier(.2, 0, 0, 1);
+    --dur: 200ms;
+  }
+
+  html { scroll-behavior: auto !important; overflow-anchor: none; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+  body {
+    background: #fff; color: var(--c-black);
+    font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  /* 顶栏 */
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff;
+    display: flex; align-items: center; padding: 20px 40px;
+  }
+  .header-left { font-size: 14px; font-weight: 500; letter-spacing: 0.02em; cursor: pointer; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .header-meta { font-size: var(--fs-1); letter-spacing: 0.08em; color: var(--c-grey); text-transform: uppercase; }
+  .header-dot { font-size: var(--fs-1); color: var(--c-line); }
+
+  .nav-links { display: flex; align-items: center; gap: 32px; margin-left: 40px; }
+  .nav-links span {
+    font-size: var(--fs-1); font-weight: 500; letter-spacing: 0.12em; color: var(--c-grey);
+    text-transform: uppercase; cursor: pointer; transition: color var(--dur) var(--ease); padding: 2px 0;
+  }
+  .nav-links span:hover { color: #444; }
+  .nav-links span.active { color: var(--c-black); }
+
+  @media (max-width: 768px) {
+    .site-header { padding: 16px 20px; flex-wrap: wrap; gap: 12px; }
+    .nav-links { margin-left: 0; gap: 24px; }
+  }
+
+  /* 页面切换 */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+
+  /* ABOUT */
+  #page-about { padding-top: 80px; }
+  .about-container {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20vh 8vw 30vh;
+  }
+  .about-title {
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    margin-bottom: 80px;
+    text-align: center;
+  }
+  .about-text-block { margin-bottom: 48px; }
+  .about-text-block p {
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    line-height: 2.4;
+    color: #222;
+  }
+
+  /* INDEX */
+  #page-gallery { padding-top: 80px; }
+  .index-block { max-width: 900px; margin: 0 auto; padding: 10vh 8vw 20vh; }
+  .index-title {
+    font-size: var(--fs-1);
+    letter-spacing: 0.24em;
+    color: var(--c-grey);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+  .index-grid a {
+    display: block; padding: 10px 6px; font-size: var(--fs-2); letter-spacing: 0.08em;
+    color: var(--c-grey); text-decoration: none; font-variant-numeric: tabular-nums;
+    text-align: center; border: 1px solid transparent;
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .index-grid a:hover { color: var(--c-black); border-color: var(--c-line); }
+  .index-grid a.visited { color: var(--c-black); }
+
+  /* ============================================================
+     单条视图：整屏可滑，无编号、无箭头、右上角 CLOSE
+     ============================================================ */
+  .viewer-overlay {
+    position: fixed; inset: 0; background: #fff; z-index: 200;
+    display: none; flex-direction: column;
+    overflow: hidden;
+    touch-action: pan-x pan-y;
+  }
+  .viewer-overlay.active { display: flex; }
+
+  .viewer-close {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    z-index: 30;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: var(--fs-1);
+    letter-spacing: 0.24em;
+    color: var(--c-grey);
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 0;
+    opacity: 0.65;
+    transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  .viewer-close:hover { opacity: 1; color: var(--c-black); }
+
+  .viewer-content {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 100px 8vw 80px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+  }
+
+  .specimen {
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%;
+    max-width: 560px;
+    padding: 0 0 20px;
+  }
+
+  /* 图片区域：瞬间切换，无过渡 */
+  .specimen img {
+    max-width: 100%;
+    max-height: 70vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    user-select: none; pointer-events: auto; cursor: pointer;
+  }
+
+  /* 品牌信息：固定高度容器，内部文字做 slide up / down */
+  .specimen-meta {
+    margin-top: 18px;
+    width: 100%;
+    max-width: 320px;
+    height: 58px;          /* 锁定高度，不随内容变化 */
+    overflow: hidden;      /* 裁切滑出/滑入的内容 */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+  }
+
+  /* 内部文字容器：执行 slide 动画 */
+  .specimen-meta-inner {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, transform;
+  }
+
+  /* 切换时：旧文字向上滑出 */
+  .specimen-meta.is-switching .specimen-meta-inner {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+
+  /* 新文字进入前的初始状态（下方 + 透明），由 JS 内联控制 */
+  .specimen-note {
+    font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    color: #8a8a8a;
+    line-height: 1.7;
+    margin-bottom: 2px;
+  }
+  .specimen-brand {
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #666;
+    text-transform: uppercase;
+  }
+  .specimen-season {
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: #aaa;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .viewer-content { padding: 64px 6vw 64px; }
+    .specimen { max-width: 100%; }
+    .specimen img { max-width: 100%; max-height: 48vh; }
+    .viewer-close { top: 18px; right: 20px; }
+    .about-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="site-header" id="siteHeader">
+    <div class="header-left" onclick="switchPage('about')">0.07%</div>
+    <nav class="nav-links">
+      <span id="nav-about" class="active" onclick="switchPage('about')">ABOUT</span>
+      <span id="nav-gallery" onclick="switchPage('gallery')">COLLECTION</span>
+    </nav>
+    <div class="header-right">
+      <span class="header-meta">ARCHIVE</span>
+      <span class="header-dot">·</span>
+      <span class="header-meta">2026</span>
+    </div>
+  </header>
+
+  <section id="page-about" class="page-section active">
+    <div class="about-container">
+      <h1 class="about-title">为这个领域，划一条金线。</h1>
+      <div class="about-text-block">
+        <p>标准不散落于众口。金线不看谁声高，不看多少人附和。不需要批准，无法修改，它自身成立。</p>
+      </div>
+      <div class="about-text-block">
+        <p>金线不是被发明，而是被发现。它本来就在。此刻，它第一次在场。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-gallery" class="page-section">
+    <div class="index-block" id="indexBlock">
+      <div class="index-title">INDEX</div>
+      <div class="index-grid" id="indexGrid"></div>
+    </div>
+  </section>
+
+  <!-- 单条全屏视图层：右上角 CLOSE，无编号，无底部返回 -->
+  <div class="viewer-overlay" id="viewerOverlay">
+    <button class="viewer-close" id="backIndex">CLOSE</button>
+    <div class="viewer-content" id="viewerContent"></div>
+  </div>
+
+<script>
+/* ===== 数据 ===== */
+const brandsData = [
+  { folder: 'avavav', name: 'AVAVAV', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '' }] },
+  { folder: 'bed-j-w-ford', name: 'BED J.W. FORD', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
+  { folder: 'botter', name: 'BOTTER', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
+  { folder: 'burc-akyol', name: 'BURC AKYOL', images: [{ file: '01.webp', season: 'SPRING 2026 READY-TO-WEAR', note: '肩宽缩小点' }] },
+  { folder: 'charles-jeffrey-loverboy', name: 'CHARLES JEFFREY LOVERBOY', images: [
+    { file: '01.webp', season: 'SPRING 2025 MENSWEAR', note: '' },
+    { file: '02.webp', season: 'FALL 2023 MENSWEAR', note: '' }
+  ]},
+  { folder: 'danielle-frankel', name: 'DANIELLE FRANKEL', images: [{ file: '01.webp', season: 'FALL 2025 READY-TO-WEAR', note: '' }] },
+  { folder: 'dries-van-noten', name: 'DRIES VAN NOTEN', images: [{ file: '01.webp', season: 'FALL 2021 MENSWEAR', note: '' }] },
+  { folder: 'eenk', name: 'EENK', images: [{ file: '01.webp', season: 'SPRING 2024 READY-TO-WEAR', note: '' }] },
+  { folder: 'feng-chen-wang', name: 'FENG CHEN WANG', images: [{ file: '01.webp', season: 'SPRING 2025 MENSWEAR', note: '' }] },
+  { folder: 'freya-dalsjo', name: 'FREYA DALSJØ', images: [
+    { file: '01.webp', season: 'COPENHAGEN SPRING 2026', note: '' },
+    { file: '02.webp', season: 'COPENHAGEN FALL 2026', note: '' }
+  ]},
+  { folder: 'harris-reed', name: 'HARRIS REED', images: [{ file: '01.webp', season: 'FALL 2022 READY-TO-WEAR', note: '头顶上的改掉' }] },
+  { folder: 'loewe', name: 'LOEWE', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '仅上衣' }] },
+  { folder: 'maison-mihara-yasuhiro', name: 'MAISON MIHARA YASUHIRO', images: [{ file: '01.webp', season: 'SPRING 2027 MENSWEAR', note: '去掉项链' }] },
+  { folder: 'matieres-fecales', name: 'MATIÈRES FÉCALES', images: [{ file: '01.webp', season: 'SPRING 2027 READY-TO-WEAR', note: '' }] },
+  { folder: 'palomo-spain', name: 'PALOMO SPAIN', images: [
+    { file: '01.webp', season: 'FALL 2023 READY-TO-WEAR', note: '' },
+    { file: '02.webp', season: 'FALL 2023 READY-TO-WEAR', note: '' },
+    { file: '03.webp', season: 'FALL 2023 READY-TO-WEAR', note: '下半身' }
+  ]},
+  { folder: 'robert-wun', name: 'ROBERT WUN', images: [
+    { file: '01.webp', season: 'SPRING 2026 COUTURE', note: '' },
+    { file: '02.webp', season: 'SPRING 2026 COUTURE', note: '' },
+    { file: '03.webp', season: 'FALL 2024 COUTURE', note: '' },
+    { file: '04.webp', season: 'SPRING 2024 COUTURE', note: '' }
+  ]},
+  { folder: 'saint-laurent', name: 'SAINT LAURENT', images: [{ file: '01.webp', season: 'SPRING 2018 READY-TO-WEAR', note: '' }] },
+  { folder: 'versace', name: 'VERSACE', images: [
+    { file: '01.webp', season: 'SPRING 2023 READY-TO-WEAR', note: '' },
+    { file: '02.webp', season: 'PRE-FALL 2024 MENSWEAR', note: '' },
+    { file: '03.webp', season: 'PRE-FALL 2024 MENSWEAR', note: '' }
+  ]},
+  { folder: 'wooyoungmi', name: 'WOOYOUNGMI', images: [
+    { file: '01.webp', season: 'FALL 2018 MENSWEAR', note: '' },
+    { file: '02.webp', season: 'FALL 2018 MENSWEAR', note: '内搭换掉' }
+  ]}
+];
+
+let allItems = [];
+brandsData.forEach(brand => {
+  brand.images.forEach(img => {
+    allItems.push({
+      src: `images/${brand.folder}/${img.file}`,
+      brand: brand.name,
+      season: img.season,
+      note: img.note
+    });
+  });
+});
+
+/* ===== 状态与元素 ===== */
+let currentIndex = -1;
+let isAnimating = false;
+const visited = new Set();
+
+const indexGrid = document.getElementById('indexGrid');
+const viewerOverlay = document.getElementById('viewerOverlay');
+const viewerContent = document.getElementById('viewerContent');
+
+function padZero(n, w) { return n.toString().padStart(w, '0'); }
+
+function switchPage(pageId) {
+  closeViewer();
+  window.scrollTo(0, 0);
+  document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelectorAll('.nav-links span').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + pageId).classList.add('active');
+}
+
+function renderIndex() {
+  indexGrid.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  allItems.forEach((_, i) => {
+    const a = document.createElement('a');
+    a.href = 'javascript:void(0)';
+    a.textContent = padZero(i + 1, 3);
+    a.dataset.index = i;
+    if (visited.has(i)) a.classList.add('visited');
+    frag.appendChild(a);
+  });
+  indexGrid.appendChild(frag);
+}
+
+/* 构建 meta 内部 HTML（不含外层容器） */
+function buildMetaHTML(item) {
+  return `
+    ${item.note ? `<div class="specimen-note">${item.note}</div>` : ''}
+    <div class="specimen-brand">${item.brand}</div>
+    <div class="specimen-season">${item.season}</div>
+  `;
+}
+
+/* 渲染完整 specimen（首次打开或直接切换时使用，无动画） */
+function renderViewer(i) {
+  const item = allItems[i];
+  viewerContent.innerHTML = `
+    <div class="specimen" id="specimenEl">
+      <img src="${item.src}" alt="" draggable="false">
+      <div class="specimen-meta" id="specimenMeta">
+        <div class="specimen-meta-inner" id="specimenMetaInner">
+          ${buildMetaHTML(item)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openViewer(i) {
+  if (i < 0 || i >= allItems.length) return;
+  currentIndex = i;
+  visited.add(i);
+  renderViewer(i);
+  viewerOverlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  viewerContent.scrollTop = 0;
+}
+
+/* 核心：图片瞬间切换，文字独立 slide up / down */
+function switchTo(i) {
+  if (i < 0 || i >= allItems.length || i === currentIndex) return;
+  if (isAnimating) return;
+
+  const specimenEl = document.getElementById('specimenEl');
+  const metaEl = document.getElementById('specimenMeta');
+  const metaInner = document.getElementById('specimenMetaInner');
+  const imgEl = specimenEl ? specimenEl.querySelector('img') : null;
+
+  if (!specimenEl || !metaEl || !metaInner || !imgEl) {
+    currentIndex = i;
+    visited.add(i);
+    renderViewer(i);
+    viewerContent.scrollTop = 0;
+    return;
+  }
+
+  isAnimating = true;
+  const item = allItems[i];
+
+  // 1. 图片：瞬间切换，无任何过渡
+  imgEl.src = item.src;
+
+  // 2. 旧文字向上滑出
+  metaEl.classList.add('is-switching');
+
+  // 3. 等旧文字滑出（350ms）
+  setTimeout(() => {
+    // 4. 先锁死：禁用过渡、置于下方、透明 —— 此刻还没写入新内容
+    metaInner.style.transition = 'none';
+    metaInner.style.transform = 'translateY(28px)';
+    metaInner.style.opacity = '0';
+
+    // 5. 再写入新内容（此时不可见，且已在下方）
+    metaInner.innerHTML = buildMetaHTML(item);
+
+    // 6. 强制重绘，记住“下方 + 透明”
+    void metaInner.offsetWidth;
+
+    // 7. 恢复过渡，移除切换类，新文字从下方滑入 + 淡入
+    requestAnimationFrame(() => {
+      metaInner.style.transition = '';
+      metaInner.style.transform = '';
+      metaInner.style.opacity = '';
+      metaEl.classList.remove('is-switching');
+
+      setTimeout(() => {
+        isAnimating = false;
+      }, 400);
+    });
+  }, 350);
+
+  // 更新索引与访问记录（立即更新，避免连点问题）
+  currentIndex = i;
+  visited.add(i);
+  viewerContent.scrollTop = 0;
+}
+
+function closeViewer() {
+  viewerOverlay.classList.remove('active');
+  document.body.style.overflow = '';
+  isAnimating = false;
+  renderIndex();
+}
+
+function goPrev() { switchTo(currentIndex - 1); }
+function goNext() { switchTo(currentIndex + 1); }
+
+/* ===== 点击事件 ===== */
+document.addEventListener('click', e => {
+  const a = e.target.closest('.index-grid a');
+  if (a) {
+    e.preventDefault();
+    openViewer(parseInt(a.dataset.index, 10));
+    return;
+  }
+  if (e.target.closest('#backIndex')) { e.preventDefault(); closeViewer(); return; }
+});
+
+/* ===== 键盘：上下左右都能切 ===== */
+document.addEventListener('keydown', e => {
+  if (!viewerOverlay.classList.contains('active')) return;
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    goPrev();
+  } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    goNext();
+  } else if (e.key === 'Escape') {
+    closeViewer();
+  }
+});
+
+/* ===== 桌面滚轮 ===== */
+let isWheeling = false;
+document.addEventListener('wheel', e => {
+  if (!viewerOverlay.classList.contains('active')) return;
+  if (isWheeling) return;
+  if (Math.abs(e.deltaY) < 20) return;
+  isWheeling = true;
+  if (e.deltaY > 0) goNext();
+  else goPrev();
+  setTimeout(() => { isWheeling = false; }, 500);
+}, { passive: true });
+
+/* ===== 手机触摸：整屏任意位置（图片或空白）上下左右滑 ===== */
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+let touchActive = false;
+
+viewerOverlay.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) return;
+  if (e.target.closest('#backIndex')) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+  touchActive = true;
+}, { passive: true });
+
+viewerOverlay.addEventListener('touchend', e => {
+  if (!touchActive) return;
+  touchActive = false;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  const dt = Date.now() - touchStartTime;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (dt > 500) return;
+
+  if (absX > absY && absX > 40) {
+    if (dx < 0) goNext(); else goPrev();
+    return;
+  }
+
+  if (absY > absX && absY > 80) {
+    if (dy < 0) goNext(); else goPrev();
+  }
+}, { passive: true });
+
+/* 初始化 */
+renderIndex();
+</script>
+
+</body>
+</html>
