@@ -165,15 +165,14 @@
     margin-top: 18px;
     width: 100%;
     max-width: 320px;
-    height: 58px;          /* 锁定高度，不随内容变化 */
-    overflow: hidden;      /* 裁切滑出/滑入的内容 */
+    height: 58px;
+    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     position: relative;
   }
 
-  /* 内部文字容器：执行 slide 动画 */
   .specimen-meta-inner {
     text-align: center;
     display: flex;
@@ -185,36 +184,36 @@
     will-change: opacity, transform;
   }
 
-  /* 切换时：旧文字向上滑出 */
+  /* 切换类：方向由 CSS 变量控制 */
   .specimen-meta.is-switching .specimen-meta-inner {
     opacity: 0;
-    transform: translateY(-28px);
+    transform: translateY(var(--slide-out, -28px));
   }
 
-  /* 新文字进入前的初始状态（下方 + 透明），由 JS 内联控制 */
+  /* —— 以下与首页 .wall-name / .wall-season 完全一致 —— */
   .specimen-note {
-    font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
     font-size: 9px;
     font-weight: 300;
-    letter-spacing: 0.06em;
-    color: #8a8a8a;
+    letter-spacing: 0.08em;
+    color: #888;
     line-height: 1.7;
     margin-bottom: 2px;
   }
+
   .specimen-brand {
-    font-family: "EB Garamond", Georgia, serif;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: #666;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: #1a1a1a;
     text-transform: uppercase;
   }
+
   .specimen-season {
-    font-family: "EB Garamond", Georgia, serif;
     font-size: 9px;
+    font-weight: 300;
     letter-spacing: 0.08em;
-    color: #aaa;
-    text-transform: uppercase;
-    margin-top: 2px;
+    color: #888;
+    margin-top: 4px;
   }
 
   @media (max-width: 768px) {
@@ -392,8 +391,8 @@ function openViewer(i) {
   viewerContent.scrollTop = 0;
 }
 
-/* 核心：图片瞬间切换，文字独立 slide up / down */
-function switchTo(i) {
+/* 核心：图片瞬间切换，文字按方向独立 slide up / down */
+function switchTo(i, direction) {
   if (i < 0 || i >= allItems.length || i === currentIndex) return;
   if (isAnimating) return;
 
@@ -412,27 +411,34 @@ function switchTo(i) {
 
   isAnimating = true;
   const item = allItems[i];
+  const isNext = direction === 'next';
+
+  // 旧文字滑出方向：next 向上(-28px)，prev 向下(+28px)
+  const outY = isNext ? '-28px' : '28px';
+  // 新文字进入起点：next 从下方(+28px)进入，prev 从上方(-28px)进入
+  const inY = isNext ? '28px' : '-28px';
 
   // 1. 图片：瞬间切换，无任何过渡
   imgEl.src = item.src;
 
-  // 2. 旧文字向上滑出
+  // 2. 设置滑出方向，触发旧文字滑出
+  metaEl.style.setProperty('--slide-out', outY);
   metaEl.classList.add('is-switching');
 
   // 3. 等旧文字滑出（350ms）
   setTimeout(() => {
-    // 4. 先锁死：禁用过渡、置于下方、透明 —— 此刻还没写入新内容
+    // 4. 先锁死：禁用过渡、置于进入起点、透明（此刻还没写新内容）
     metaInner.style.transition = 'none';
-    metaInner.style.transform = 'translateY(28px)';
+    metaInner.style.transform = `translateY(${inY})`;
     metaInner.style.opacity = '0';
 
-    // 5. 再写入新内容（此时不可见，且已在下方）
+    // 5. 再写入新内容（此时不可见，且已在进入起点）
     metaInner.innerHTML = buildMetaHTML(item);
 
-    // 6. 强制重绘，记住“下方 + 透明”
+    // 6. 强制重绘，记住“进入起点 + 透明”
     void metaInner.offsetWidth;
 
-    // 7. 恢复过渡，移除切换类，新文字从下方滑入 + 淡入
+    // 7. 恢复过渡，移除切换类，新文字从进入起点滑回原位 + 淡入
     requestAnimationFrame(() => {
       metaInner.style.transition = '';
       metaInner.style.transform = '';
@@ -445,7 +451,7 @@ function switchTo(i) {
     });
   }, 350);
 
-  // 更新索引与访问记录（立即更新，避免连点问题）
+  // 更新索引与访问记录
   currentIndex = i;
   visited.add(i);
   viewerContent.scrollTop = 0;
@@ -458,8 +464,8 @@ function closeViewer() {
   renderIndex();
 }
 
-function goPrev() { switchTo(currentIndex - 1); }
-function goNext() { switchTo(currentIndex + 1); }
+function goPrev() { switchTo(currentIndex - 1, 'prev'); }
+function goNext() { switchTo(currentIndex + 1, 'next'); }
 
 /* ===== 点击事件 ===== */
 document.addEventListener('click', e => {
