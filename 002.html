@@ -42,7 +42,6 @@
     overscroll-behavior: none;
   }
 
-  /* 隐藏滚动条（全局） */
   ::-webkit-scrollbar { width: 0; height: 0; display: none; }
   * { scrollbar-width: none; -ms-overflow-style: none; }
 
@@ -76,7 +75,6 @@
     .nav-links { margin-left: 0; gap: 24px; }
   }
 
-  /* 页面切换 */
   .page-section { display: none; }
   .page-section.active { display: block; }
 
@@ -135,7 +133,7 @@
   .index-grid a.visited { color: var(--c-black); }
 
   /* ============================================================
-     单条视图：整屏可滑，锁定边缘手势，无滚动条
+     单条视图：空白回 INDEX；无 CLOSE；只上下滑切图
      ============================================================ */
   .viewer-overlay {
     position: fixed; inset: 0; background: #fff; z-index: 200;
@@ -146,33 +144,12 @@
   }
   .viewer-overlay.active { display: flex; }
 
-  .viewer-close {
-    position: fixed;
-    top: 26px;
-    right: 40px;
-    z-index: 30;
-    background: none;
-    border: none;
-    font-family: inherit;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.3em;
-    color: var(--c-ink);
-    text-transform: uppercase;
-    cursor: pointer;
-    padding: 8px 0;
-    opacity: 0.8;
-    transition: opacity var(--dur) var(--ease);
-  }
-  .viewer-close:hover { opacity: 1; }
-
   .viewer-content {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 110px 8vw 90px;
     overflow: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: none;
     touch-action: none;
+    cursor: pointer;
   }
 
   .specimen {
@@ -183,6 +160,7 @@
     padding: 0 0 24px;
     transition: opacity 280ms var(--ease), transform 280ms var(--ease);
     will-change: opacity, transform;
+    pointer-events: none; /* 容器不拦截点击，只有图片和品牌信息拦截 */
   }
   .specimen.is-switching {
     opacity: 0;
@@ -197,7 +175,9 @@
     object-fit: contain;
     display: block;
     margin: 0 auto;
-    user-select: none; pointer-events: auto; cursor: pointer;
+    user-select: none;
+    pointer-events: auto;
+    cursor: default;
     transition: opacity 280ms var(--ease);
   }
 
@@ -205,6 +185,7 @@
     margin-top: 28px;
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     max-width: 360px;
+    pointer-events: auto; /* 品牌信息可点，不触发回退 */
   }
   .specimen-note {
     font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
@@ -239,7 +220,6 @@
     .viewer-content { padding: 72px 6vw 72px; }
     .specimen { max-width: 100%; }
     .specimen img { max-width: 100%; max-height: 52vh; }
-    .viewer-close { top: 20px; right: 20px; }
     .about-title { font-size: 32px; }
     .about-container { padding: 14vh 8vw 18vh; }
   }
@@ -280,12 +260,10 @@
   </section>
 
   <div class="viewer-overlay" id="viewerOverlay">
-    <button class="viewer-close" id="backIndex">CLOSE</button>
     <div class="viewer-content" id="viewerContent"></div>
   </div>
 
 <script>
-/* ===== 数据 ===== */
 const brandsData = [
   { folder: 'avavav', name: 'AVAVAV', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '' }] },
   { folder: 'bed-j-w-ford', name: 'BED J.W. FORD', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
@@ -342,7 +320,6 @@ brandsData.forEach(brand => {
   });
 });
 
-/* ===== 状态与元素 ===== */
 let currentIndex = -1;
 const visited = new Set();
 
@@ -432,7 +409,7 @@ function closeViewer() {
 function goPrev() { switchTo(currentIndex - 1); }
 function goNext() { switchTo(currentIndex + 1); }
 
-/* ===== 点击事件 ===== */
+/* 点击：只有图片和品牌信息拦截；其余空白回 INDEX */
 document.addEventListener('click', e => {
   const a = e.target.closest('.index-grid a');
   if (a) {
@@ -440,10 +417,14 @@ document.addEventListener('click', e => {
     openViewer(parseInt(a.dataset.index, 10));
     return;
   }
-  if (e.target.closest('#backIndex')) { e.preventDefault(); closeViewer(); return; }
+
+  if (!viewerOverlay.classList.contains('active')) return;
+
+  if (e.target.closest('.specimen img, .specimen-meta')) return;
+
+  closeViewer();
 });
 
-/* ===== 键盘：上下左右都能切 ===== */
 document.addEventListener('keydown', e => {
   if (!viewerOverlay.classList.contains('active')) return;
 
@@ -458,7 +439,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* ===== 桌面滚轮 ===== */
 let isWheeling = false;
 document.addEventListener('wheel', e => {
   if (!viewerOverlay.classList.contains('active')) return;
@@ -470,13 +450,11 @@ document.addEventListener('wheel', e => {
   setTimeout(() => { isWheeling = false; }, 500);
 }, { passive: true });
 
-/* ===== 手机触摸：整屏滑动，阻止浏览器边缘返回 ===== */
 let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
 let touchActive = false;
 
 viewerOverlay.addEventListener('touchstart', e => {
   if (e.touches.length !== 1) return;
-  if (e.target.closest('#backIndex')) return;
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
   touchStartTime = Date.now();
@@ -488,7 +466,6 @@ viewerOverlay.addEventListener('touchmove', e => {
   const t = e.touches[0];
   const dx = t.clientX - touchStartX;
   const dy = t.clientY - touchStartY;
-  // 横向滑动时阻止默认，压住浏览器边缘返回
   if (Math.abs(dx) > Math.abs(dy)) {
     e.preventDefault();
   }
@@ -506,17 +483,17 @@ viewerOverlay.addEventListener('touchend', e => {
 
   if (dt > 500) return;
 
-  if (absX > absY && absX > 40) {
-    if (dx < 0) goNext(); else goPrev();
+  if (absY > absX && absY > 80) {
+    if (dy < 0) goNext(); else goPrev();
     return;
   }
 
-  if (absY > absX && absY > 80) {
-    if (dy < 0) goNext(); else goPrev();
+  if (absX < 10 && absY < 10 && dt < 300) {
+    if (e.target.closest('.specimen img, .specimen-meta')) return;
+    closeViewer();
   }
 }, { passive: true });
 
-/* 初始化 */
 renderIndex();
 </script>
 
