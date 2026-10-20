@@ -12,171 +12,299 @@
 
 <style>
   :root {
-    --fs-1: 9px;
-    --fs-2: 10px;
+    /* 字体 */
+    --fs-micro: 10px;
+    --fs-meta: 11px;
+    --fs-body: 14px;
+    --fs-title: 26px;
+
+    /* 颜色 */
     --c-black: #000;
-    --c-grey: #999;
+    --c-ink: #1a1a1a;
+    --c-body: #222;
+    --c-grey: #8a8a8a;
+    --c-grey-strong: #666;
     --c-line: #e5e5e5;
+
+    /* 动效 */
+    --dur-fast: 180ms;
+    --dur-base: 320ms;
     --ease: cubic-bezier(.2, 0, 0, 1);
-    --dur: 200ms;
+    --ease-meta: cubic-bezier(.4, 0, .2, 1);
+    --slide-dist: 28px;
+
+    /* 布局 */
+    --header-h: 64px;
+    --meta-h: 62px;
+
+    /* 手势与滚轮 */
+    --swipe-x: 40px;
+    --swipe-y: 80px;
+    --swipe-max-ms: 600;
+    --wheel-threshold: 20;
+    --wheel-cooldown: 350ms; /* 桌面端稍微灵敏一点 */
   }
 
-  html { scroll-behavior: auto !important; overflow-anchor: none; }
+  html { scroll-behavior: auto; overflow-anchor: none; }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
   body {
     background: #fff; color: var(--c-black);
     font-family: "Inter", "Helvetica", "Noto Sans SC", sans-serif;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     overscroll-behavior: none;
+  }
+
+  .tag {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-grey);
   }
 
   /* 顶栏 */
   .site-header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff;
-    display: flex; align-items: center; padding: 20px 40px;
+    display: flex; align-items: center;
+    height: var(--header-h);
+    padding: 0 40px;
+    border-bottom: 1px solid transparent;
   }
-  .header-left { font-size: 14px; font-weight: 500; letter-spacing: 0.02em; cursor: pointer; }
+  .header-left {
+    font-size: 14px; font-weight: 500; letter-spacing: 0.02em; cursor: pointer;
+    line-height: 1;
+  }
   .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .header-meta { font-size: var(--fs-1); letter-spacing: 0.08em; color: var(--c-grey); text-transform: uppercase; }
-  .header-dot { font-size: var(--fs-1); color: var(--c-line); }
+  .header-right .tag { color: var(--c-grey-strong); }
+  .header-dot { font-size: var(--fs-micro); color: var(--c-line); }
 
   .nav-links { display: flex; align-items: center; gap: 32px; margin-left: 40px; }
   .nav-links span {
-    font-size: var(--fs-1); font-weight: 500; letter-spacing: 0.12em; color: var(--c-grey);
-    text-transform: uppercase; cursor: pointer; transition: color var(--dur) var(--ease); padding: 2px 0;
+    font-size: var(--fs-micro); font-weight: 500; letter-spacing: 0.12em; color: var(--c-grey);
+    text-transform: uppercase; cursor: pointer;
+    transition: color var(--dur-fast) var(--ease);
+    padding: 4px 0;
   }
-  .nav-links span:hover { color: #444; }
+  .nav-links span:hover { color: var(--c-grey-strong); }
   .nav-links span.active { color: var(--c-black); }
-
-  @media (max-width: 768px) {
-    .site-header { padding: 16px 20px; flex-wrap: wrap; gap: 12px; }
-    .nav-links { margin-left: 0; gap: 24px; }
-  }
 
   /* 页面切换 */
   .page-section { display: none; }
   .page-section.active { display: block; }
 
-  #page-about { padding-top: 80px; }
-  .about-container { max-width: 560px; margin: 0 auto; padding: 20vh 8vw 30vh; }
-  .about-title { font-size: 26px; font-weight: 300; letter-spacing: 0.12em; margin-bottom: 80px; text-align: center; }
+  /* ABOUT */
+  #page-about { padding-top: var(--header-h); }
+  .about-container {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20vh 8vw 30vh;
+  }
+  .about-title {
+    font-size: var(--fs-title);
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+    margin-bottom: 80px;
+    text-align: center;
+  }
   .about-text-block { margin-bottom: 48px; }
-  .about-text-block p { font-size: 14px; font-weight: 300; letter-spacing: 0.12em; line-height: 2.4; color: #222; }
+  .about-text-block p {
+    font-size: var(--fs-body);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    line-height: 1.9;
+    color: var(--c-body);
+  }
 
-  #page-gallery { padding-top: 80px; }
-  .index-block { max-width: 900px; margin: 0 auto; padding: 10vh 8vw 20vh; }
-  .index-title { font-size: var(--fs-1); letter-spacing: 0.24em; color: var(--c-grey); text-transform: uppercase; margin-bottom: 32px; }
-  .index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+  /* INDEX */
+  #page-gallery { padding-top: var(--header-h); }
+  .index-block { 
+    max-width: 1000px; /* 桌面端拉宽，更大气 */
+    margin: 0 auto; 
+    padding: 12vh 6vw 20vh; 
+  }
+  .index-title { margin-bottom: 32px; }
+  
+  .index-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); 
+    gap: 6px; 
+  }
   .index-grid a {
-    display: block; padding: 10px 6px; font-size: var(--fs-2); letter-spacing: 0.08em;
-    color: var(--c-grey); text-decoration: none; font-variant-numeric: tabular-nums;
-    text-align: center; border: 1px solid transparent; transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+    display: flex; align-items: center; justify-content: center;
+    height: 40px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--c-grey);
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
   }
   .index-grid a:hover { color: var(--c-black); border-color: var(--c-line); }
-  .index-grid a.visited { color: var(--c-black); }
+  .index-grid a.visited { color: var(--c-ink); }
+  .index-grid a:focus-visible { border-color: var(--c-ink); color: var(--c-black); }
 
-  /* ============================================================
-     单条视图：手机滑动 / 电脑键盘，无箭头 UI
-     ============================================================ */
+  /* 单条视图 */
   .viewer-overlay {
     position: fixed; inset: 0; background: #fff; z-index: 200;
     display: none; flex-direction: column;
     overflow: hidden;
-    touch-action: pan-x pan-y;
   }
   .viewer-overlay.active { display: flex; }
 
-  /* 中心内容区：可上下滚动 */
+  .viewer-close {
+    position: fixed;
+    top: 24px; right: 32px;
+    z-index: 30;
+    background: none; border: none;
+    font-family: inherit;
+    font-size: var(--fs-micro);
+    letter-spacing: 0.2em;
+    color: var(--c-grey-strong);
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 4px;
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .viewer-close:hover { color: var(--c-black); }
+  .viewer-close:focus-visible { color: var(--c-black); }
+
   .viewer-content {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 80px 20px 40px;
-    pointer-events: none;
+    padding: calc(var(--header-h) + 30px) 8vw 60px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    touch-action: pan-y;
   }
 
   .specimen {
     text-align: center;
     display: flex; flex-direction: column; align-items: center;
     width: 100%;
-    padding: 20px 0 40px;
-    transition: opacity 320ms var(--ease), transform 320ms var(--ease);
+    max-width: 800px; /* 桌面端大幅放宽，让图片撑满 */
+    padding: 0 0 10px;
+  }
+
+  .specimen-figure {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 300px;
+    max-height: 78vh; /* 最大化图片高度 */
+  }
+  
+  .specimen img {
+    max-width: 100%;
+    max-height: 78vh;
+    width: auto; height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    opacity: 1;
+    transition: opacity var(--dur-fast) var(--ease);
+  }
+  .specimen img.is-loading { opacity: 0; }
+
+  .specimen.boundary { animation: boundary-nudge var(--dur-base) var(--ease); }
+  @keyframes boundary-nudge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .specimen-meta {
+    margin-top: 24px;
+    width: 100%;
+    max-width: 400px;
+    height: var(--meta-h);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+  }
+  .specimen-meta-inner {
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px;
+    transition: opacity var(--dur-base) var(--ease-meta),
+                transform var(--dur-base) var(--ease-meta);
     will-change: opacity, transform;
   }
-  .specimen.is-switching {
+  .specimen-meta.is-switching .specimen-meta-inner {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(var(--slide-out, calc(var(--slide-dist) * -1)));
   }
 
-  .specimen-id { font-size: var(--fs-1); letter-spacing: 0.24em; color: var(--c-grey); text-transform: uppercase; margin-bottom: 20px; }
-
-  .specimen img {
-    max-width: 100%; max-height: 55vh;
-    object-fit: contain; display: block; margin: 0 auto;
-    user-select: none; pointer-events: auto; cursor: pointer;
-    transition: opacity 320ms var(--ease);
-  }
-
-  /* 品牌信息：图片下方，柔和不抢图 */
-  .specimen-meta {
-    margin-top: 32px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    max-width: 320px;
-  }
-  .specimen-note {
-    font-size: var(--fs-2); font-weight: 300; letter-spacing: 0.08em;
-    color: #666; line-height: 1.9; margin-bottom: 4px;
-  }
   .specimen-brand {
-    font-size: var(--fs-1); letter-spacing: 0.18em; color: #555;
+    font-size: 12px; /* 桌面端品牌名稍大 */
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--c-ink);
     text-transform: uppercase;
+    line-height: 1.6;
   }
   .specimen-season {
-    font-size: var(--fs-1); letter-spacing: 0.12em; color: #aaa;
-    text-transform: uppercase; margin-top: 2px;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: var(--c-grey-strong);
+    line-height: 1.6;
   }
 
-  /* 底部控制栏 */
-  .viewer-footer {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
-    display: flex; align-items: center; justify-content: center; z-index: 20;
-    background: linear-gradient(to top, #fff 60%, rgba(255,255,255,0));
-    pointer-events: none;
-  }
-  .back-entry {
-    background: none; border: none; font-family: inherit; font-size: var(--fs-1);
-    letter-spacing: 0.24em; color: var(--c-grey); text-transform: uppercase; cursor: pointer; padding: 8px 16px;
-    pointer-events: auto;
-  }
-  .back-entry:hover { color: var(--c-black); }
-
+  /* 移动端优化 */
   @media (max-width: 768px) {
-    .viewer-content { padding: 64px 12px 72px; }
-    .specimen img { max-height: 48vh; }
-    .specimen-meta { margin-top: 24px; }
+    .site-header { height: auto; padding: 14px 20px; flex-wrap: wrap; gap: 10px; }
+    .nav-links { margin-left: 0; gap: 22px; }
+
+    .about-container { padding: 16vh 6vw 20vh; }
+    .about-title { font-size: 22px; margin-bottom: 48px; }
+    .about-text-block p { font-size: 14px; letter-spacing: 0.01em; }
+
+    .index-block { padding: 8vh 6vw 15vh; }
+    .index-grid { 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 8px; 
+    }
+    .index-grid a {
+      height: 44px;
+      font-size: 13px;
+    }
+
+    .viewer-content { 
+      padding: 72px 4vw 40px;
+    }
+    .specimen { max-width: 100%; }
+    .specimen-figure { max-height: 65vh; }
+    .specimen img { max-height: 65vh; }
+    
+    .specimen-meta { margin-top: 16px; }
+    .specimen-brand { font-size: 12px; }
+    .specimen-season { font-size: 11px; }
+    
+    .viewer-close { top: 18px; right: 20px; }
   }
 
-  @media (max-width: 600px) {
-    .specimen img { max-height: 45vh; }
-    .viewer-content { padding: 60px 10px 70px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
   }
 </style>
 </head>
 <body>
 
   <header class="site-header" id="siteHeader">
-    <div class="header-left" onclick="switchPage('about')">0.07%</div>
+    <div class="header-left" id="brandHome" role="button" tabindex="0">0.07%</div>
     <nav class="nav-links">
-      <span id="nav-about" class="active" onclick="switchPage('about')">ABOUT</span>
-      <span id="nav-gallery" onclick="switchPage('gallery')">COLLECTION</span>
+      <span id="nav-about" class="active" role="button" tabindex="0" data-page="about">ABOUT</span>
+      <span id="nav-gallery" role="button" tabindex="0" data-page="gallery">COLLECTION</span>
     </nav>
     <div class="header-right">
-      <span class="header-meta">ARCHIVE</span>
+      <span class="tag">ARCHIVE</span>
       <span class="header-dot">·</span>
-      <span class="header-meta">2026</span>
+      <span class="tag">2026</span>
     </div>
   </header>
 
@@ -193,81 +321,83 @@
   </section>
 
   <section id="page-gallery" class="page-section">
-    <div class="index-block" id="indexBlock">
-      <div class="index-title">INDEX</div>
+    <div class="index-block">
+      <div class="index-title tag">INDEX</div>
       <div class="index-grid" id="indexGrid"></div>
     </div>
   </section>
 
-  <!-- 单条全屏视图层（无左右箭头 UI） -->
-  <div class="viewer-overlay" id="viewerOverlay">
+  <div class="viewer-overlay" id="viewerOverlay" role="dialog" aria-modal="true" aria-label="作品查看">
+    <button class="viewer-close" id="backIndex" type="button">CLOSE</button>
     <div class="viewer-content" id="viewerContent"></div>
-    <div class="viewer-footer">
-      <button class="back-entry" id="backIndex">← INDEX</button>
-    </div>
   </div>
 
 <script>
-/* ===== 数据 ===== */
+/* ============================================================
+   数据
+   ============================================================ */
 const brandsData = [
-  { folder: 'avavav', name: 'AVAVAV', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '' }] },
-  { folder: 'bed-j-w-ford', name: 'BED J.W. FORD', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
-  { folder: 'botter', name: 'BOTTER', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR', note: '' }] },
+  { folder: 'avavav', name: 'AVAVAV', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR' }] },
+  { folder: 'bed-j-w-ford', name: 'BED J.W. FORD', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR' }] },
+  { folder: 'botter', name: 'BOTTER', images: [{ file: '01.webp', season: 'FALL 2024 MENSWEAR' }] },
   { folder: 'burc-akyol', name: 'BURC AKYOL', images: [{ file: '01.webp', season: 'SPRING 2026 READY-TO-WEAR', note: '肩宽缩小点' }] },
   { folder: 'charles-jeffrey-loverboy', name: 'CHARLES JEFFREY LOVERBOY', images: [
-    { file: '01.webp', season: 'SPRING 2025 MENSWEAR', note: '' },
-    { file: '02.webp', season: 'FALL 2023 MENSWEAR', note: '' }
+    { file: '01.webp', season: 'SPRING 2025 MENSWEAR' },
+    { file: '02.webp', season: 'FALL 2023 MENSWEAR' }
   ]},
-  { folder: 'danielle-frankel', name: 'DANIELLE FRANKEL', images: [{ file: '01.webp', season: 'FALL 2025 READY-TO-WEAR', note: '' }] },
-  { folder: 'dries-van-noten', name: 'DRIES VAN NOTEN', images: [{ file: '01.webp', season: 'FALL 2021 MENSWEAR', note: '' }] },
-  { folder: 'eenk', name: 'EENK', images: [{ file: '01.webp', season: 'SPRING 2024 READY-TO-WEAR', note: '' }] },
-  { folder: 'feng-chen-wang', name: 'FENG CHEN WANG', images: [{ file: '01.webp', season: 'SPRING 2025 MENSWEAR', note: '' }] },
+  { folder: 'danielle-frankel', name: 'DANIELLE FRANKEL', images: [{ file: '01.webp', season: 'FALL 2025 READY-TO-WEAR' }] },
+  { folder: 'dries-van-noten', name: 'DRIES VAN NOTEN', images: [{ file: '01.webp', season: 'FALL 2021 MENSWEAR' }] },
+  { folder: 'eenk', name: 'EENK', images: [{ file: '01.webp', season: 'SPRING 2024 READY-TO-WEAR' }] },
+  { folder: 'feng-chen-wang', name: 'FENG CHEN WANG', images: [{ file: '01.webp', season: 'SPRING 2025 MENSWEAR' }] },
   { folder: 'freya-dalsjo', name: 'FREYA DALSJØ', images: [
-    { file: '01.webp', season: 'COPENHAGEN SPRING 2026', note: '' },
-    { file: '02.webp', season: 'COPENHAGEN FALL 2026', note: '' }
+    { file: '01.webp', season: 'COPENHAGEN SPRING 2026' },
+    { file: '02.webp', season: 'COPENHAGEN FALL 2026' }
   ]},
   { folder: 'harris-reed', name: 'HARRIS REED', images: [{ file: '01.webp', season: 'FALL 2022 READY-TO-WEAR', note: '头顶上的改掉' }] },
   { folder: 'loewe', name: 'LOEWE', images: [{ file: '01.webp', season: 'FALL 2024 READY-TO-WEAR', note: '仅上衣' }] },
   { folder: 'maison-mihara-yasuhiro', name: 'MAISON MIHARA YASUHIRO', images: [{ file: '01.webp', season: 'SPRING 2027 MENSWEAR', note: '去掉项链' }] },
-  { folder: 'matieres-fecales', name: 'MATIÈRES FÉCALES', images: [{ file: '01.webp', season: 'SPRING 2027 READY-TO-WEAR', note: '' }] },
+  { folder: 'matieres-fecales', name: 'MATIÈRES FÉCALES', images: [{ file: '01.webp', season: 'SPRING 2027 READY-TO-WEAR' }] },
   { folder: 'palomo-spain', name: 'PALOMO SPAIN', images: [
-    { file: '01.webp', season: 'FALL 2023 READY-TO-WEAR', note: '' },
-    { file: '02.webp', season: 'FALL 2023 READY-TO-WEAR', note: '' },
+    { file: '01.webp', season: 'FALL 2023 READY-TO-WEAR' },
+    { file: '02.webp', season: 'FALL 2023 READY-TO-WEAR' },
     { file: '03.webp', season: 'FALL 2023 READY-TO-WEAR', note: '下半身' }
   ]},
   { folder: 'robert-wun', name: 'ROBERT WUN', images: [
-    { file: '01.webp', season: 'SPRING 2026 COUTURE', note: '' },
-    { file: '02.webp', season: 'SPRING 2026 COUTURE', note: '' },
-    { file: '03.webp', season: 'FALL 2024 COUTURE', note: '' },
-    { file: '04.webp', season: 'SPRING 2024 COUTURE', note: '' }
+    { file: '01.webp', season: 'SPRING 2026 COUTURE' },
+    { file: '02.webp', season: 'SPRING 2026 COUTURE' },
+    { file: '03.webp', season: 'FALL 2024 COUTURE' },
+    { file: '04.webp', season: 'SPRING 2024 COUTURE' }
   ]},
-  { folder: 'saint-laurent', name: 'SAINT LAURENT', images: [{ file: '01.webp', season: 'SPRING 2018 READY-TO-WEAR', note: '' }] },
+  { folder: 'saint-laurent', name: 'SAINT LAURENT', images: [{ file: '01.webp', season: 'SPRING 2018 READY-TO-WEAR' }] },
   { folder: 'versace', name: 'VERSACE', images: [
-    { file: '01.webp', season: 'SPRING 2023 READY-TO-WEAR', note: '' },
-    { file: '02.webp', season: 'PRE-FALL 2024 MENSWEAR', note: '' },
-    { file: '03.webp', season: 'PRE-FALL 2024 MENSWEAR', note: '' }
+    { file: '01.webp', season: 'SPRING 2023 READY-TO-WEAR' },
+    { file: '02.webp', season: 'PRE-FALL 2024 MENSWEAR' },
+    { file: '03.webp', season: 'PRE-FALL 2024 MENSWEAR' }
   ]},
   { folder: 'wooyoungmi', name: 'WOOYOUNGMI', images: [
-    { file: '01.webp', season: 'FALL 2018 MENSWEAR', note: '' },
+    { file: '01.webp', season: 'FALL 2018 MENSWEAR' },
     { file: '02.webp', season: 'FALL 2018 MENSWEAR', note: '内搭换掉' }
   ]}
 ];
 
-let allItems = [];
+const allItems = [];
 brandsData.forEach(brand => {
   brand.images.forEach(img => {
     allItems.push({
       src: `images/${brand.folder}/${img.file}`,
       brand: brand.name,
       season: img.season,
-      note: img.note
+      note: img.note || ''
     });
   });
 });
 
-/* ===== 状态与元素 ===== */
+/* 状态 */
 let currentIndex = -1;
+let isSwitching = false;
+let boundaryTimer = 0;
 const visited = new Set();
+const preloaded = new Set();
 
 const indexGrid = document.getElementById('indexGrid');
 const viewerOverlay = document.getElementById('viewerOverlay');
@@ -275,87 +405,195 @@ const viewerContent = document.getElementById('viewerContent');
 
 function padZero(n, w) { return n.toString().padStart(w, '0'); }
 
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function preload(i) {
+  if (i < 0 || i >= allItems.length || preloaded.has(i)) return;
+  preloaded.add(i);
+  const img = new Image();
+  img.src = allItems[i].src;
+}
+
 function switchPage(pageId) {
   closeViewer();
   window.scrollTo(0, 0);
   document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + pageId).classList.add('active');
   document.querySelectorAll('.nav-links span').forEach(el => el.classList.remove('active'));
-  document.getElementById('nav-' + pageId).classList.add('active');
+  const nav = document.getElementById('nav-' + pageId);
+  if (nav) nav.classList.add('active');
 }
 
 function renderIndex() {
-  indexGrid.innerHTML = '';
   const frag = document.createDocumentFragment();
   allItems.forEach((_, i) => {
     const a = document.createElement('a');
     a.href = 'javascript:void(0)';
     a.textContent = padZero(i + 1, 3);
+    a.title = `${allItems[i].brand} · ${allItems[i].season}`;
     a.dataset.index = i;
     if (visited.has(i)) a.classList.add('visited');
     frag.appendChild(a);
   });
+  indexGrid.innerHTML = '';
   indexGrid.appendChild(frag);
 }
 
-/* 切换时先淡出再换内容，避免闪 */
+function markVisited(i) {
+  visited.add(i);
+  const el = indexGrid.querySelector(`a[data-index="${i}"]`);
+  if (el) el.classList.add('visited');
+}
+
+function buildMetaHTML(item) {
+  return `
+    <div class="specimen-brand">${escapeHTML(item.brand)}</div>
+    <div class="specimen-season">${escapeHTML(item.season)}</div>
+  `;
+}
+
 function renderViewer(i) {
   const item = allItems[i];
   viewerContent.innerHTML = `
     <div class="specimen" id="specimenEl">
-      <div class="specimen-id">No.${padZero(i + 1, 3)}</div>
-      <img src="${item.src}" alt="" draggable="false">
-      <div class="specimen-meta">
-        ${item.note ? `<div class="specimen-note">${item.note}</div>` : ''}
-        <div class="specimen-brand">${item.brand}</div>
-        <div class="specimen-season">${item.season}</div>
+      <div class="specimen-figure">
+        <img src="${item.src}" alt="${escapeHTML(item.brand)} ${escapeHTML(item.season)}" draggable="false" class="is-loading">
+      </div>
+      <div class="specimen-meta" id="specimenMeta">
+        <div class="specimen-meta-inner" id="specimenMetaInner">
+          ${buildMetaHTML(item)}
+        </div>
       </div>
     </div>
   `;
-  requestAnimationFrame(() => {
-    const el = document.getElementById('specimenEl');
-    if (el) el.classList.remove('is-switching');
-  });
+  const img = viewerContent.querySelector('.specimen img');
+  const onLoad = () => img.classList.remove('is-loading');
+  if (img.complete) onLoad();
+  else img.addEventListener('load', onLoad, { once: true });
+  img.addEventListener('error', onLoad, { once: true });
 }
 
 function openViewer(i) {
   if (i < 0 || i >= allItems.length) return;
   currentIndex = i;
-  visited.add(i);
+  markVisited(i);
   renderViewer(i);
   viewerOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   viewerContent.scrollTop = 0;
+  preload(i - 1); preload(i + 1);
 }
 
-function switchTo(i) {
-  if (i < 0 || i >= allItems.length || i === currentIndex) return;
-  const el = document.getElementById('specimenEl');
-  if (el) {
-    el.classList.add('is-switching');
-    setTimeout(() => {
-      currentIndex = i;
-      visited.add(i);
-      renderViewer(i);
-      viewerContent.scrollTop = 0;
-    }, 180);
-  } else {
+let pendingTarget = null;
+
+function switchTo(i, direction) {
+  if (i < 0 || i >= allItems.length) { nudgeBoundary(); return; }
+  if (i === currentIndex) return;
+
+  if (isSwitching) { pendingTarget = { i, direction }; return; }
+
+  const specimenEl = document.getElementById('specimenEl');
+  const metaEl = document.getElementById('specimenMeta');
+  const metaInner = document.getElementById('specimenMetaInner');
+  const imgEl = specimenEl ? specimenEl.querySelector('img') : null;
+
+  if (!specimenEl || !metaEl || !metaInner || !imgEl) {
     currentIndex = i;
-    visited.add(i);
+    markVisited(i);
     renderViewer(i);
+    viewerContent.scrollTop = 0;
+    return;
   }
+
+  isSwitching = true;
+  const item = allItems[i];
+  const isNext = direction === 'next';
+
+  const outY = isNext ? 'calc(var(--slide-dist) * -1)' : 'var(--slide-dist)';
+  const inY  = isNext ? 'var(--slide-dist)' : 'calc(var(--slide-dist) * -1)';
+
+  metaEl.style.setProperty('--slide-out', outY);
+  metaEl.classList.add('is-switching');
+
+  const durMs = getComputedStyle(metaInner).transitionDuration.split(',')[0].trim();
+  const wait = parseFloat(durMs) * (durMs.includes('ms') ? 1 : 1000) || 320;
+
+  setTimeout(() => {
+    imgEl.classList.add('is-loading');
+    imgEl.src = item.src;
+    
+    const reveal = () => {
+      imgEl.classList.remove('is-loading');
+      imgEl.removeEventListener('load', reveal);
+      imgEl.removeEventListener('error', reveal);
+    };
+    if (imgEl.complete) reveal();
+    else {
+      imgEl.addEventListener('load', reveal, { once: true });
+      imgEl.addEventListener('error', reveal, { once: true });
+    }
+
+    metaInner.style.transition = 'none';
+    metaInner.style.transform = `translateY(${inY})`;
+    metaInner.style.opacity = '0';
+    metaInner.innerHTML = buildMetaHTML(item);
+    void metaInner.offsetWidth;
+    
+    requestAnimationFrame(() => {
+      metaInner.style.transition = '';
+      metaInner.style.transform = '';
+      metaInner.style.opacity = '';
+      metaEl.classList.remove('is-switching');
+      
+      const end = () => {
+        isSwitching = false;
+        if (pendingTarget) {
+          const p = pendingTarget; pendingTarget = null;
+          switchTo(p.i, p.direction);
+        }
+      };
+      
+      metaInner.addEventListener('transitionend', function te(e) {
+        if (e.propertyName === 'opacity' || e.propertyName === 'transform') {
+          metaInner.removeEventListener('transitionend', te);
+          end();
+        }
+      });
+      setTimeout(() => { if (isSwitching) end(); }, 600);
+    });
+  }, wait);
+
+  currentIndex = i;
+  markVisited(i);
+  viewerContent.scrollTop = 0;
+  preload(i - 1); preload(i + 1);
+}
+
+function nudgeBoundary() {
+  const specimenEl = document.getElementById('specimenEl');
+  if (!specimenEl) return;
+  clearTimeout(boundaryTimer);
+  specimenEl.classList.remove('boundary');
+  void specimenEl.offsetWidth;
+  specimenEl.classList.add('boundary');
+  boundaryTimer = setTimeout(() => specimenEl.classList.remove('boundary'), 400);
 }
 
 function closeViewer() {
   viewerOverlay.classList.remove('active');
   document.body.style.overflow = '';
-  renderIndex();
+  isSwitching = false;
+  pendingTarget = null;
+  currentIndex = -1;
 }
 
-function goPrev() { switchTo(currentIndex - 1); }
-function goNext() { switchTo(currentIndex + 1); }
+function goPrev() { if (currentIndex <= 0) { nudgeBoundary(); return; } switchTo(currentIndex - 1, 'prev'); }
+function goNext() { if (currentIndex >= allItems.length - 1) { nudgeBoundary(); return; } switchTo(currentIndex + 1, 'next'); }
 
-/* ===== 点击事件 ===== */
 document.addEventListener('click', e => {
   const a = e.target.closest('.index-grid a');
   if (a) {
@@ -364,48 +602,52 @@ document.addEventListener('click', e => {
     return;
   }
   if (e.target.closest('#backIndex')) { e.preventDefault(); closeViewer(); return; }
+  const nav = e.target.closest('[data-page]');
+  if (nav) { switchPage(nav.dataset.page); return; }
+  if (e.target.closest('#brandHome')) { switchPage('about'); return; }
 });
 
-/* ===== 键盘：上下左右都能切 ===== */
 document.addEventListener('keydown', e => {
+  const nav = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.page;
+  if (nav && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault(); switchPage(nav); return;
+  }
+  if (document.activeElement && document.activeElement.id === 'brandHome' && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault(); switchPage('about'); return;
+  }
+
   if (!viewerOverlay.classList.contains('active')) return;
 
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    goPrev();
-  } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-    e.preventDefault();
-    goNext();
-  } else if (e.key === 'Escape') {
-    closeViewer();
-  }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goPrev(); }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goNext(); }
+  else if (e.key === 'Escape') { closeViewer(); }
 });
 
-/* ===== 桌面滚轮 ===== */
-let isWheeling = false;
+let wheelCooldown = false;
 document.addEventListener('wheel', e => {
   if (!viewerOverlay.classList.contains('active')) return;
-  if (isWheeling) return;
-  if (Math.abs(e.deltaY) < 20) return;
-  isWheeling = true;
-  if (e.deltaY > 0) goNext();
-  else goPrev();
-  setTimeout(() => { isWheeling = false; }, 500);
+  if (wheelCooldown) return;
+  const threshold = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wheel-threshold')) || 20;
+  if (Math.abs(e.deltaY) < threshold) return;
+  wheelCooldown = true;
+  if (e.deltaY > 0) goNext(); else goPrev();
+  const cooldown = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wheel-cooldown')) || 350;
+  setTimeout(() => { wheelCooldown = false; }, cooldown);
 }, { passive: true });
 
-/* ===== 手机触摸：上下左右滑，不用按键 ===== */
 let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
 let touchActive = false;
 
-viewerContent.addEventListener('touchstart', e => {
+viewerOverlay.addEventListener('touchstart', e => {
   if (e.touches.length !== 1) return;
+  if (e.target.closest('#backIndex')) return;
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
   touchStartTime = Date.now();
   touchActive = true;
 }, { passive: true });
 
-viewerContent.addEventListener('touchend', e => {
+viewerOverlay.addEventListener('touchend', e => {
   if (!touchActive) return;
   touchActive = false;
   const t = e.changedTouches[0];
@@ -415,19 +657,22 @@ viewerContent.addEventListener('touchend', e => {
   const absX = Math.abs(dx);
   const absY = Math.abs(dy);
 
-  if (dt > 500) return;
+  const root = getComputedStyle(document.documentElement);
+  const maxMs = parseFloat(root.getPropertyValue('--swipe-max-ms')) || 600;
+  const sx = parseFloat(root.getPropertyValue('--swipe-x')) || 40;
+  const sy = parseFloat(root.getPropertyValue('--swipe-y')) || 80;
 
-  if (absX > absY && absX > 40) {
+  if (dt > maxMs) return;
+
+  if (absX > absY && absX > sx) {
     if (dx < 0) goNext(); else goPrev();
     return;
   }
-
-  if (absY > absX && absY > 80) {
+  if (absY > absX && absY > sy) {
     if (dy < 0) goNext(); else goPrev();
   }
 }, { passive: true });
 
-/* 初始化 */
 renderIndex();
 </script>
 
