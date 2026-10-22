@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Babel · 异常档案终端</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Share+Tech+Mono&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  /* 提取自截图的档案配色 */
+  --bg-dark: #1c221f;        /* 幽深灰绿底 */
+  --paper: #e6eae7;          /* 褪色档案纸白 */
+  --paper-dim: #cdd4cf;      /* 阴影白 */
+  
+  --text-main: #1a201d;      /* 纸上的黑字 */
+  --text-light: #93a49c;     /* 边缘暗绿字 */
+  
+  --accent-red: #a3454c;     /* 褪色的灰红（印章色） */
+  --accent-green: #3b5c52;   /* 阴湿绿 */
+  --accent-teal: #628b82;    /* 亮一点点的青绿 */
+  
+  --font-mono: "Share Tech Mono", "Courier New", monospace;
+  --font-title: "Space Grotesk", "Noto Sans SC", sans-serif;
+  --font-body: "Noto Sans SC", sans-serif;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  line-height: 1.7;
+  font-family: var(--font-body);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== 背景层：重度虚化与暗角 ===== */
+#bg {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--bg-dark);
+  transition: background-image 0.8s ease;
+}
+
+#bgMask {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  /* 叠加一层灰绿和模糊，让背景彻底退居幕后 */
+  backdrop-filter: blur(12px) brightness(0.6) sepia(0.3) hue-rotate(90deg);
+  background: rgba(28, 34, 31, 0.7);
+  pointer-events: none;
+  transition: background 0.15s linear;
+}
+
+/* 深重暗角 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, transparent 20%, rgba(10, 14, 12, 0.85) 100%);
+}
+
+/* ===== 全局网格/扫描线特效 ===== */
+#fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(rgba(163, 69, 76, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(163, 69, 76, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+#fx-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.15) 50%);
+  background-size: 100% 4px;
+}
+
+/* ===== 布局 ===== */
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 60px 20px 120px;
+  position: relative;
+  z-index: 20;
+}
+
+/* ===== 顶栏 ===== */
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  gap: 20px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.title-group {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 左侧红线小装饰（模拟截图左上角） */
+.title-group::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 6px;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent-red);
+}
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent-red);
+  letter-spacing: 0.4em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+/* 标题：干净的白色，带轻微错位故障和虚影 */
+.title {
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffffff;
+  outline: none;
+  cursor: text;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  /* 轻微错位，红绿边缘 */
+  text-shadow: 
+    -2px 0 0 rgba(163, 69, 76, 0.6),
+     2px 0 0 rgba(98, 139, 130, 0.6),
+     0 4px 15px rgba(0, 0, 0, 0.8);
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.title:hover, .title:focus {
+  text-shadow: 
+    -3px 0 0 rgba(163, 69, 76, 0.9),
+     3px 0 0 rgba(98, 139, 130, 0.9),
+     0 4px 20px rgba(0, 0, 0, 0.9);
+}
+
+.title:empty::before {
+  content: "未命名档案";
+  color: var(--text-light);
+  text-shadow: none;
+}
+
+.btns {
+  display: flex;
+  gap: 12px;
+}
+
+.btns button {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+  position: relative;
+  letter-spacing: 0.1em;
+}
+.btns button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-style: solid;
+  border-color: var(--accent-red);
+}
+
+/* ===== 控制台面板（深色半透明） ===== */
+.console-panel {
+  background: rgba(20, 26, 23, 0.65);
+  border: 1px dashed rgba(163, 69, 76, 0.4); /* 虚线框 */
+  border-left: 4px solid var(--accent-red);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  backdrop-filter: blur(5px);
+  position: relative;
+}
+
+/* 面板四角的裁切标记 */
+.console-panel::before, .console-panel::after {
+  content: ''; position: absolute; width: 8px; height: 8px; pointer-events: none;
+}
+.console-panel::before {
+  top: -1px; left: -1px; border-top: 2px solid var(--paper); border-left: 2px solid var(--paper);
+}
+.console-panel::after {
+  bottom: -1px; right: -1px; border-bottom: 2px solid var(--paper); border-right: 2px solid var(--paper);
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.panel-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-light);
+  letter-spacing: 0.15em;
+  min-width: 84px;
+}
+
+.font-btn {
+  background: transparent;
+  border: 1px solid rgba(147, 164, 156, 0.3);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 4px 14px;
+  transition: all 0.2s ease;
+}
+.font-btn:hover {
+  color: #fff;
+  border-color: var(--paper);
+}
+.font-btn.active {
+  background: var(--paper);
+  color: var(--text-main);
+  border-color: var(--paper);
+  font-weight: 700;
+}
+
+.mask-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 200px;
+}
+.mask-control input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 2px;
+  background: rgba(147, 164, 156, 0.3);
+  outline: none;
+  cursor: pointer;
+}
+.mask-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--paper);
+  cursor: pointer;
+  border: 2px solid var(--accent-red);
+  border-radius: 0;
+}
+.mask-control .value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--paper);
+  font-weight: bold;
+}
+
+/* ===== 核心：档案纸窗口 ===== */
+.window-frame {
+  background: var(--paper);
+  color: var(--text-main);
+  /* 用多重阴影和边框制造纸张的厚度与叠层感 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 4px var(--paper), /* 纸张内留白 */
+    inset 0 0 0 5px rgba(163, 69, 76, 0.3); /* 内红线 */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 纸张纹理：淡淡的网格 */
+.window-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(rgba(27, 46, 40, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 46, 40, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: 0;
+}
+
+/* 伪元素制造右上角的「虚化印章」感 */
+.window-frame::after {
+  content: 'BABEL ARCHIVE';
+  position: absolute;
+  right: -10px;
+  top: 50px;
+  font-family: var(--font-mono);
+  font-size: 40px;
+  color: rgba(163, 69, 76, 0.06);
+  transform: rotate(90deg);
+  pointer-events: none;
+  z-index: 0;
+  letter-spacing: 5px;
+}
+
+.window-header {
+  background: var(--accent-green); /* 深绿头部 */
+  color: var(--paper);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  border-bottom: 2px solid var(--accent-red);
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.05em;
+}
+
+.window-btns span {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--paper);
+  background: transparent;
+  line-height: 16px;
+  text-align: center;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: all 0.1s ease;
+}
+.window-btns span.close {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+  color: #fff;
+}
+.window-btns span:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+#editor {
+  width: 100%;
+  min-height: 50vh;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 2;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+  caret-color: var(--accent-red); /* 光标用灰红 */
+  resize: none;
+  padding: 30px 32px;
+  overflow: hidden;
+  field-sizing: content;
+  position: relative;
+  z-index: 1;
+}
+
+#editor::placeholder {
+  color: rgba(26, 32, 29, 0.35);
+  font-style: italic;
+}
+
+body.font-default #editor { font-family: var(--font-body); font-weight: 500; }
+body.font-apple #editor { font-family: -apple-system, sans-serif; font-weight: 400; letter-spacing: 0; }
+body.font-korean #editor { font-family: "Noto Sans KR", "Noto Sans SC", sans-serif; font-weight: 400; letter-spacing: 0.02em; }
+
+.window-footer {
+  border-top: 1px dashed rgba(26, 32, 29, 0.3); /* 虚线脚注 */
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-green);
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== 保存提示 ===== */
+#saved {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: var(--accent-green);
+  padding: 8px 20px;
+  border: 1px dashed var(--paper);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+#saved.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 680px) {
+  .page { padding: 30px 16px 100px; }
+  .title { font-size: 32px; }
+  #editor { font-size: 15px; padding: 22px; }
+  .console-panel { padding: 12px; gap: 12px; }
+  .panel-label { min-width: 100%; margin-bottom: -6px; }
+  .title-group::before { display: none; } /* 手机端隐藏左侧红线免得出界 */
+}
+</style>
+</head>
+<body class="font-default">
+
+<div id="bg"></div>
+<div id="bgMask"></div>
+<div id="fx-layer"></div>
+
+<div class="page">
+
+  <div class="topbar">
+    <div class="title-group">
+      <div class="subtitle">BABEL ARCHIVE // SEC-01</div>
+      <div class="title" id="title" contenteditable="true" spellcheck="false">巴别塔异常收容档案</div>
+    </div>
+    <div class="btns">
+      <button id="btnUpload">载入背景</button>
+      <button id="btnClearBg">清空背景</button>
+    </div>
+  </div>
+
+  <div class="console-panel">
+    <div class="panel-row">
+      <span class="panel-label">[ 字体渲染 ]</span>
+      <button class="font-btn active" data-font="default">标准档案</button>
+      <button class="font-btn" data-font="apple">极简无衬线</button>
+      <button class="font-btn" data-font="korean">韩系排版</button>
+    </div>
+    <div class="panel-row">
+      <span class="panel-label">[ 背景遮罩 ]</span>
+      <div class="mask-control">
+        <input type="range" id="maskRange" min="0" max="100" value="70">
+        <span class="value" id="maskValue">70</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="window-frame">
+    <div class="window-header">
+      <span>💾 Ver 2.0 // BABEL-01</span>
+      <div class="window-btns">
+        <span>_</span>
+        <span>□</span>
+        <span class="close">×</span>
+      </div>
+    </div>
+    
+    <textarea id="editor" placeholder=">> 身份验证通过。请在此处输入您的异常观测日志..."></textarea>
+    
+    <div class="window-footer">
+      <span>AUTH: LEVEL-4</span>
+      <span>UID: 101250822</span>
+    </div>
+  </div>
+
+</div>
+
+<div id="saved">[ 数据已同步 ]</div>
+
+<input type="file" id="fileInput" accept="image/*" hidden>
+
+<script>
+/* ===== DOM ===== */
+const bg = document.getElementById('bg');
+const bgMask = document.getElementById('bgMask');
+const editor = document.getElementById('editor');
+const savedTip = document.getElementById('saved');
+const fileInput = document.getElementById('fileInput');
+const maskRange = document.getElementById('maskRange');
+const maskValue = document.getElementById('maskValue');
+const titleEl = document.getElementById('title');
+const fontBtns = document.querySelectorAll('.font-btn');
+
+const KEY_TEXT = 'babel_text_v5';
+const KEY_MASK = 'babel_mask_v5';
+const KEY_TITLE = 'babel_title_v5';
+const KEY_FONT = 'babel_font_v5';
+
+function autoGrow() {
+  editor.style.height = 'auto';
+  editor.style.height = editor.scrollHeight + 'px';
+}
+
+function applyMask(percent) {
+  const alpha = percent / 100 * 0.95; 
+  // 应用灰绿色蒙版
+  bgMask.style.background = `rgba(28, 34, 31, ${alpha})`;
+  maskValue.textContent = percent;
+}
+
+function setFont(fontId) {
+  document.body.classList.remove('font-apple', 'font-korean', 'font-default');
+  document.body.classList.add('font-' + fontId);
+  fontBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.font === fontId);
+  });
+  localStorage.setItem(KEY_FONT, fontId);
+  setTimeout(autoGrow, 30);
+}
+
+/* ===== IndexedDB ===== */
+let db;
+const dbReq = indexedDB.open('BabelTerminalDB', 1);
+dbReq.onupgradeneeded = (e) => {
+  const db = e.target.result;
+  if (!db.objectStoreNames.contains('images')) {
+    db.createObjectStore('images');
+  }
+};
+dbReq.onsuccess = (e) => {
+  db = e.target.result;
+  if (db) {
+    const tx = db.transaction('images', 'readonly');
+    const store = tx.objectStore('images');
+    const getReq = store.get('bgImage');
+    getReq.onsuccess = () => {
+      if (getReq.result) {
+        bg.style.backgroundImage = `url(${getReq.result})`;
+      }
+    };
+  }
+};
+
+function saveBgToDB(base64Str) {
+  if (!db) return;
+  const tx = db.transaction('images', 'readwrite');
+  const store = tx.objectStore('images');
+  store.put(base64Str, 'bgImage');
+}
+
+function clearBgFromDB() {
+  if (!db) return;
+  const tx = db.transaction('images', 'readwrite');
+  const store = tx.objectStore('images');
+  store.delete('bgImage');
+}
+
+/* ===== 初始化 ===== */
+window.addEventListener('DOMContentLoaded', () => {
+  const t = localStorage.getItem(KEY_TEXT);
+  if (t) editor.value = t;
+
+  const m = localStorage.getItem(KEY_MASK);
+  const initMask = m !== null ? parseInt(m, 10) : 70; // 默认遮罩调到70配合背景虚化
+  maskRange.value = initMask;
+  applyMask(initMask);
+
+  const ti = localStorage.getItem(KEY_TITLE);
+  if (ti) titleEl.textContent = ti;
+
+  const savedFont = localStorage.getItem(KEY_FONT) || 'default';
+  setFont(savedFont);
+
+  autoGrow();
+});
+
+/* ===== 交互 ===== */
+maskRange.addEventListener('input', () => {
+  const v = parseInt(maskRange.value, 10);
+  applyMask(v);
+  localStorage.setItem(KEY_MASK, v);
+});
+
+let titleTimer = null;
+titleEl.addEventListener('input', () => {
+  clearTimeout(titleTimer);
+  titleTimer = setTimeout(() => {
+    localStorage.setItem(KEY_TITLE, titleEl.textContent.trim());
+    showSaved();
+  }, 600);
+});
+titleEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    titleEl.blur();
+  }
+});
+titleEl.addEventListener('blur', () => {
+  localStorage.setItem(KEY_TITLE, titleEl.textContent.trim());
+});
+
+let textTimer = null;
+editor.addEventListener('input', () => {
+  autoGrow();
+  clearTimeout(textTimer);
+  textTimer = setTimeout(() => {
+    localStorage.setItem(KEY_TEXT, editor.value);
+    showSaved();
+  }, 600);
+});
+
+let savedTimer = null;
+function showSaved() {
+  savedTip.classList.add('show');
+  clearTimeout(savedTimer);
+  savedTimer = setTimeout(() => {
+    savedTip.classList.remove('show');
+  }, 1500);
+}
+
+document.getElementById('btnUpload').addEventListener('click', () => {
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    bg.style.backgroundImage = `url(${dataUrl})`;
+    saveBgToDB(dataUrl);
+  };
+  reader.readAsDataURL(file);
+  fileInput.value = '';
+});
+
+document.getElementById('btnClearBg').addEventListener('click', () => {
+  bg.style.backgroundImage = '';
+  clearBgFromDB();
+});
+
+fontBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    setFont(btn.dataset.font);
+  });
+});
+</script>
+
+</body>
+</html>
