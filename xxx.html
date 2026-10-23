@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MY LOG | Data Driven Editorial</title>
+<style>
+  /* =========================================
+     全局变量 & 基础重置
+     ========================================= */
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --ink: #111111;
+    --ink-soft: #777777;
+    --line: #eaeaea;
+    --line-dark: #d4d4d4;
+
+    --link-blue: #1a5cff;
+
+    --radius-lg: 16px;
+    --radius-md: 12px;
+
+    --font-main: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "PingFang SC", "Helvetica Neue", sans-serif;
+    --font-serif: "Times New Roman", Times, serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+    --container-max: 1080px;
+    --header-height: 64px;
+    --breadcrumb-height: 45px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    letter-spacing: -0.02em;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1); }
+
+  /* =========================================
+     极简顶栏
+     ========================================= */
+  .header {
+    position: fixed; top: 0; width: 100%; height: var(--header-height);
+    z-index: 200; 
+    transition: all 0.3s ease;
+    background: transparent;
+    border-bottom: 1px solid transparent;
+  }
+  .header.scrolled {
+    background: rgba(250, 250, 250, 0.8);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .header-inner {
+    max-width: var(--container-max); margin: 0 auto; padding: 0 24px;
+    height: 100%; display: flex; justify-content: space-between; align-items: center;
+  }
+  
+  .logo { font-size: 16px; font-weight: 800; letter-spacing: -0.04em; cursor: pointer; color: var(--ink); display: flex; align-items: center; gap: 12px; }
+  .sys-tag { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); letter-spacing: 0.05em; padding-left: 12px; border-left: 1px solid var(--line-dark); }
+  .sys-status { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .status-dot { width: 6px; height: 6px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+
+  /* 页面路由 */
+  .page-view { display: none; opacity: 0; transition: opacity 0.4s ease; flex: 1; }
+  .page-view.active { display: block; opacity: 1; }
+  #view-home { padding-top: var(--header-height); }
+
+  /* =========================================
+     主视觉 (含巨幅数据，隐形交互)
+     ========================================= */
+  .hero-compact { padding: 80px 0 100px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .hero-inner { max-width: var(--container-max); margin: 0 auto; padding: 0 24px; }
+  
+  .hero-tag { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .hero-tag::before { content: ''; width: 4px; height: 4px; background: var(--ink); border-radius: 50%; display: block; }
+  .hero-title { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 8px; }
+  .hero-sub { font-size: 14px; font-weight: 400; color: var(--ink-soft); max-width: 600px; margin-bottom: 64px; }
+
+  .hero-data-grid { display: flex; align-items: flex-start; gap: 120px; }
+  .data-link-block { display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit; }
+  .data-label { font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); margin-bottom: 12px; letter-spacing: 0.05em; }
+  .data-val { font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--ink); display: flex; align-items: baseline; gap: 12px; transition: color 0.3s ease; }
+  .data-val span { font-size: 16px; font-weight: 500; color: var(--ink-soft); }
+  .data-action-text { margin-top: 16px; font-size: 14px; font-weight: 600; color: var(--ink); display: inline-block; position: relative; padding-bottom: 2px; }
+  .data-action-text::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 1px; background-color: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1); }
+  .data-link-block:hover .data-val { color: var(--ink-soft); }
+  .data-link-block:hover .data-action-text::after { transform: scaleX(1); }
+  .data-static-block { display: flex; flex-direction: column; }
+  .data-static-block .data-val { color: var(--ink); }
+
+  /* =========================================
+     通用容器与标题
+     ========================================= */
+  .main-container { max-width: var(--container-max); margin: 0 auto; padding: 0 24px 120px; flex: 1; }
+  
+  .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; margin-top: 48px; }
+  .section-header h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 12px; }
+  .section-tag { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); font-weight: 400; }
+
+  /* =========================================
+     7月纪元：双栏流水账
+     ========================================= */
+  .era-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-top: 16px; }
+  .era-column-head { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); letter-spacing: 0.05em; padding-bottom: 8px; border-bottom: 1px solid var(--line-dark); margin-bottom: 16px; }
+  .era-list { display: flex; flex-direction: column; gap: 14px; }
+  .era-list-item { font-size: 14px; line-height: 1.6; display: flex; align-items: flex-start; }
+  .era-list-item::before { content: '•'; color: var(--ink-soft); margin-right: 8px; font-size: 16px; line-height: 1.4; }
+  .link-item { color: var(--link-blue); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; transition: opacity 0.2s ease; font-weight: 500; }
+  .link-item:active, .link-item:hover { opacity: 0.5; }
+  .plain-item { color: var(--ink-soft); }
+
+  /* =========================================
+     历史入口 (隐形交互)
+     ========================================= */
+  .flat-link-block {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 32px 0; border-top: 1px solid var(--line-dark); border-bottom: 1px solid var(--line);
+    cursor: pointer; text-decoration: none; color: inherit; transition: padding-left 0.3s ease;
+  }
+  .flat-link-content { display: flex; flex-direction: column; gap: 4px; }
+  .flat-link-title { font-size: 18px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 12px; transition: color 0.3s ease; }
+  .flat-link-desc { font-size: 13px; color: var(--ink-soft); transition: color 0.3s ease; }
+  .flat-link-right { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); letter-spacing: 0.05em; position: relative; }
+  .flat-link-block:hover .flat-link-title { color: var(--ink-soft); }
+  .flat-link-block:hover .flat-link-desc { color: var(--line-dark); }
+  .flat-link-block:hover { padding-left: 8px; }
+
+  /* =========================================
+     面包屑
+     ========================================= */
+  .breadcrumb-wrapper { display: none; background: var(--bg); height: var(--breadcrumb-height); position: fixed; top: var(--header-height); left: 0; width: 100%; z-index: 190; align-items: center; border-bottom: 1px solid var(--line); }
+  .page-view.active .breadcrumb-wrapper { display: flex; }
+  .breadcrumb-list { list-style: none; display: flex; align-items: center; flex-wrap: wrap; font-size: 12px; font-weight: 500; color: var(--ink-soft); max-width: var(--container-max); margin: 0 auto; padding: 0 24px; width: 100%; }
+  .breadcrumb-list li { display: flex; align-items: center; }
+  .breadcrumb-list li::after { content: '/'; margin: 0 12px; color: var(--line-dark); }
+  .breadcrumb-list li:last-child::after { content: ''; }
+  .breadcrumb-list a { color: var(--ink-soft); text-decoration: none; cursor: pointer; transition: color 0.3s; outline: none; }
+  .breadcrumb-list a:hover { color: var(--ink); }
+
+  /* =========================================
+     🌟 修正指令列表页 (纯粹透明，无背景)
+     ========================================= */
+  .instruction-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--line-dark);
+  }
+
+  .instruction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: padding-left 0.3s ease, opacity 0.3s ease;
+  }
+  
+  /* 隐形交互：悬停时纯粹右移，没有任何背景色 */
+  .instruction-item:hover {
+    padding-left: 12px;
+    opacity: 0.6;
+  }
+
+  .inst-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .inst-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.05em;
+  }
+
+  .inst-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  .inst-right {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+  }
+
+  .inst-brand {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .status-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .status-pending { background: #f5f5f5; color: #999; }
+  .status-rejected { background: #fee; color: #d44; }
+
+  /* =========================================
+     🌟 详情页正文 (去除臃肿的框)
+     ========================================= */
+  .article-layout { max-width: 800px; margin: 0 auto; padding: 60px 24px 120px; padding-top: calc(var(--header-height) + var(--breadcrumb-height) + 40px); }
+  .article-header { margin-bottom: 40px; text-align: center; }
+  .article-title { font-size: 40px; font-weight: 700; line-height: 1.3; margin-bottom: 20px; letter-spacing: -0.04em; }
+  .article-summary { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 0; letter-spacing: 0.02em; }
+  .article-summary span { color: var(--ink); font-weight: 700; margin: 0 2px; }
+  .article-media-group { margin: 40px 0 60px 0; display: flex; flex-direction: column; gap: 40px; }
+  .article-media-img { width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: transparent; }
+  .article-media-img img { width: 100%; height: auto; display: block; }
+
+  /* 正文底部的修正备注：取消卡片，改用左侧极细边框 */
+  .article-note { 
+    margin-top: 80px; 
+    padding-left: 24px; 
+    border-left: 2px solid var(--line-dark);
+    background: transparent;
+  }
+  .article-note .note-title { 
+    font-family: var(--font-mono); 
+    font-size: 12px; 
+    font-weight: 600; 
+    color: var(--ink-soft); 
+    margin-bottom: 8px; 
+    letter-spacing: 0.1em; 
+    text-transform: uppercase; 
+  }
+  .article-note p { 
+    font-size: 15px; 
+    color: var(--ink); 
+    margin-bottom: 0; 
+    line-height: 1.8; 
+    font-weight: 500; 
+  }
+
+  /* =========================================
+     画廊页及其他
+     ========================================= */
+  .white-cube-list { display: flex; flex-direction: column; align-items: center; gap: 16vh; padding-bottom: 10vh; }
+  .white-cube-item { width: 100%; max-width: 680px; margin: 0 auto; text-align: left; opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.2, 0, 0, 1), transform 0.8s cubic-bezier(0.2, 0, 0, 1); }
+  .white-cube-item.is-visible { opacity: 1; transform: translateY(0); }
+  .white-cube-item .img-wrapper { background: transparent; border-radius: var(--radius-md); overflow: hidden; }
+  .white-cube-item img { width: 100%; height: auto; max-height: 75vh; object-fit: contain; }
+  .white-cube-info { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; }
+  .white-cube-title { font-family: var(--font-serif); font-style: italic; font-size: 16px; color: #999; letter-spacing: 0.05em; font-weight: 400; }
+  .white-cube-index { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); }
+  .pagination-controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 80px; margin-bottom: 20px; }
+  .pag-btn { background: none; border: none; padding: 10px; cursor: pointer; color: var(--ink); transition: opacity 0.3s, transform 0.3s; display: flex; align-items: center; justify-content: center; }
+  .pag-btn:disabled { opacity: 0.2; cursor: default; }
+  .pag-btn:not(:disabled):hover { transform: scale(1.1); }
+  .pag-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .pag-counter { font-family: var(--font-mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .footer { border-top: 1px solid var(--line); padding: 32px 24px; background: var(--bg); margin-top: auto; }
+  .footer-inner { max-width: var(--container-max); margin: 0 auto; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .footer-inner span { color: var(--ink); }
+
+  @media (max-width: 900px) {
+    .era-two-columns { grid-template-columns: 1fr; gap: 40px; }
+    .sys-tag { display: none; }
+    .hero-data-grid { flex-direction: column; gap: 48px; }
+    .data-val { font-size: 56px; }
+    .instruction-item { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .inst-right { width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 极简顶栏 -->
+  <header class="header" id="main-header">
+    <div class="header-inner">
+      <div class="logo" onclick="switchPage('home')">
+        MY LOG.
+        <div class="sys-tag">SYS.ARCHIVE // 2026</div>
+      </div>
+      <div class="sys-status">
+        <div class="status-dot"></div>
+        SYS.ACTIVE
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 页面 1：首页 ================= -->
+  <div id="view-home" class="page-view active">
+    
+    <section class="hero-compact">
+      <div class="hero-inner">
+        <div class="hero-tag">System Archive / Since 2023</div>
+        <h1 class="hero-title">Observe & Record.</h1>
+        <p class="hero-sub">客观抽样与记录。这里是历史沉淀的精选档案。</p>
+        
+        <div class="hero-data-grid">
+          <div class="data-link-block" onclick="switchPage('category')">
+            <div class="data-label">确认成立 (2023 - 2026.06)</div>
+            <div class="data-val">500<span>套</span></div>
+            <div class="data-action-text">进入完全成立画廊</div>
+          </div>
+
+          <div class="data-static-block">
+            <div class="data-label">审阅造型 (2023 - 2026.06)</div>
+            <div class="data-val">600,000<span>套</span></div>
+            <div class="data-action-text" style="color: var(--ink-soft); cursor: default;">成立率 0.07%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <main class="main-container">
+      
+      <!-- 近期抽样记录 -->
+      <div class="section-header" style="margin-top: 48px;">
+        <h2>Sampling Era <span class="section-tag">// 2026.07 - PRESENT</span></h2>
+      </div>
+
+      <div class="era-two-columns">
+        <div>
+          <div class="era-column-head">UNCONFIRMED / 未成立</div>
+          <div class="era-list" id="list-unconfirmed"></div>
+        </div>
+        <div>
+          <div class="era-column-head">CONFIRMED / 成立</div>
+          <div class="era-list" id="list-confirmed"></div>
+        </div>
+      </div>
+
+      <!-- 修正指令入口 -->
+      <div class="section-header" style="margin-top: 64px;">
+        <h2>Past Instructions <span class="section-tag">// 2023 - 2026.06</span></h2>
+      </div>
+      
+      <div class="flat-link-block" onclick="switchPage('instruction')">
+        <div class="flat-link-content">
+          <div class="flat-link-title">修正指令记录</div>
+          <div class="flat-link-desc">查看历史所有被打回、需调整的档案</div>
+        </div>
+        <div class="flat-link-right">
+          PAST.INSTRUCTION
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================= 页面 2：完全成立画廊 ================= -->
+  <div id="view-category" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><span class="current" style="color: var(--ink);">Past Confirmed</span></li>
+      </ul>
+    </div>
+    <main class="main-container" style="padding-top: calc(var(--header-height) + var(--breadcrumb-height) + 40px);">
+      <div class="white-cube-list" id="category-grid"></div>
+      <div class="pagination-controls">
+        <button class="pag-btn" id="cat-prev" disabled>
+          <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <div class="pag-counter" id="cat-counter">01 / 02</div>
+        <button class="pag-btn" id="cat-next">
+          <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= 页面 3：修正指令列表 ================= -->
+  <div id="view-instruction" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><span class="current" style="color: var(--ink);">Past Instructions</span></li>
+      </ul>
+    </div>
+    
+    <main class="main-container" style="padding-top: calc(var(--header-height) + var(--breadcrumb-height) + 40px);">
+      
+      <div class="instruction-list">
+        <div class="instruction-item" onclick="openDetail('casablanca')">
+          <div class="inst-left">
+            <div class="inst-id">REV.001</div>
+            <div class="inst-title">内衬纹路修正</div>
+          </div>
+          <div class="inst-right">
+            <div class="inst-brand">Casablanca</div>
+            <div class="status-tag status-pending">Pending</div>
+          </div>
+        </div>
+
+        <div class="instruction-item" onclick="openDetail('matieres')">
+          <div class="inst-left">
+            <div class="inst-id">REV.002</div>
+            <div class="inst-title">版型微调记录</div>
+          </div>
+          <div class="inst-right">
+            <div class="inst-brand">Matières Fécales</div>
+            <div class="status-tag status-rejected">Rejected</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================= 详情页 1 ================= -->
+  <div id="view-detail-casablanca" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><span class="current" style="color: var(--ink);">Casablanca Log</span></li>
+      </ul>
+    </div>
+    <main class="article-layout">
+      <header class="article-header">
+        <h1 class="article-title" id="title-casablanca"></h1>
+        <div class="article-summary" id="summary-casablanca"></div>
+      </header>
+      <div class="article-body">
+        <div class="article-media-group">
+           <div class="article-media-img"><img src="./images/casablanca/01.JPG" alt="Casablanca 01"></div>
+           <div class="article-media-img"><img src="./images/casablanca/02.png" alt="Casablanca 02"></div>
+        </div>
+        
+        <div class="article-note">
+          <div class="note-title">修正指令 / REV.LOG</div>
+          <p>内衬纹路像老头衬衫，换掉后视成立。已收录进/02</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= 详情页 2 ================= -->
+  <div id="view-detail-matieres" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><span class="current" style="color: var(--ink);">Matières Fécales Log</span></li>
+      </ul>
+    </div>
+    <main class="article-layout">
+      <header class="article-header">
+        <h1 class="article-title" id="title-matieres"></h1>
+        <div class="article-summary" id="summary-matieres"></div>
+      </header>
+      <div class="article-body">
+        <div class="article-media-group">
+           <div class="article-media-img"><img src="./images/matieres-fecales/01.JPG" alt="Matières Fécales 01"></div>
+        </div>
+        
+        <div class="article-note">
+          <div class="note-title">修正指令 / REV.LOG</div>
+          <p>备注已收录进/01</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>© 2026 <span>MY LOG.</span> // ALL RIGHTS RESERVED</div>
+      <div>SYS.UPDATE // <span>OCT 2026</span></div>
+    </div>
+  </footer>
+
+  <script>
+    if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
+
+    const header = document.getElementById('main-header');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) header.classList.add('scrolled');
+      else header.classList.remove('scrolled');
+    });
+
+    const events = [
+      { id: 'casablanca', date: '2026-10-03', name: 'Casablanca', samples: 66, brands: 8, success: 1, articleTitle: 'Casablanca 抽样详细报告。' },
+      { id: 'matieres', date: '2026-09-30', name: 'Matières Fécales', samples: 22, brands: 4, success: 1, articleTitle: 'Matières Fécales 抽样详细报告。' },
+      { id: 'anon-1004', date: '2026-10-04', name: '匿名抽样测试', samples: 22, brands: 4, success: 0, articleTitle: null }
+    ];
+
+    const fmtDate = (iso) => iso.replaceAll('-', '.');
+
+    function renderSamplingEra() {
+      const sortedEvents = [...events].sort((a, b) => b.date.localeCompare(a.date));
+      const unconfirmedEvents = sortedEvents.filter(e => e.success === 0);
+      const confirmedEvents = sortedEvents.filter(e => e.success > 0);
+
+      document.getElementById('list-unconfirmed').innerHTML = unconfirmedEvents.map((e, index) => {
+        const num = (index + 1).toString().padStart(2, '0');
+        return `<div class="era-list-item"><span class="plain-item">No.${num} | ${fmtDate(e.date)} ${e.name}（${e.samples}场样本/0成立）</span></div>`;
+      }).join('');
+
+      document.getElementById('list-confirmed').innerHTML = confirmedEvents.map((e, index) => {
+        const num = (index + 1).toString().padStart(2, '0');
+        return `
+          <div class="era-list-item">
+            <a class="link-item" onclick="openDetail('${e.id}')">No.${num} | ${fmtDate(e.date)} ${e.name} 抽样记录</a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDetail(id) {
+      const e = events.find(x => x.id === id);
+      if (!e || !e.articleTitle) return;
+
+      document.getElementById('title-' + id).textContent = e.articleTitle;
+      document.getElementById('summary-' + id).innerHTML =
+        `本次共抽取 <span>${e.samples}</span> 场秀，涵盖 <span>${e.brands}</span> 个品牌，成立 <span>${e.success}</span> 张记录。`;
+    }
+
+    function switchPage(pageName) {
+      document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
+      document.getElementById('view-' + pageName).classList.add('active');
+      window.scrollTo(0, 0); 
+      if (window.scrollY <= 20) header.classList.remove('scrolled');
+    }
+
+    function openDetail(brand) {
+      switchPage('detail-' + brand);
+    }
+
+    const confirmedData = [
+      { folder: 'etro', name: 'etro', file: '01.JPG' },
+      { folder: 'demobaza', name: 'demobaza', file: '01.webp' },
+      { folder: 'heos', name: 'heos', file: '01.png' },
+      { folder: 'parsons-bfa', name: 'parsons bfa', file: '01.JPG' },
+      { folder: 'hermes', name: 'Hermès', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '02.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '03.JPG' }
+    ];
+
+    const ITEMS_PER_PAGE = 4;
+    const pages = [];
+    for (let i = 0; i < confirmedData.length; i += ITEMS_PER_PAGE) {
+      pages.push(confirmedData.slice(i, i + ITEMS_PER_PAGE));
+    }
+
+    let currentPage = 0;
+    const catGrid = document.getElementById('category-grid');
+    const catPrevBtn = document.getElementById('cat-prev');
+    const catNextBtn = document.getElementById('cat-next');
+    const catCounter = document.getElementById('cat-counter');
+    let observer = null;
+
+    function renderConfirmedPage() {
+      catGrid.innerHTML = '';
+      const currentItems = pages[currentPage];
+
+      currentItems.forEach((item, index) => {
+        const el = document.createElement('div');
+        el.className = 'white-cube-item';
+        const indexNum = (currentPage * ITEMS_PER_PAGE + index + 1).toString().padStart(2, '0');
+        el.innerHTML = `
+          <div class="img-wrapper">
+            <img src="./images/${item.folder}/${item.file}" alt="${item.name}">
+          </div>
+          <div class="white-cube-info">
+            <div class="white-cube-title">${item.name}</div>
+            <div class="white-cube-index">IDX. ${indexNum}</div>
+          </div>
+        `;
+        catGrid.appendChild(el);
+      });
+
+      catPrevBtn.disabled = currentPage === 0;
+      catNextBtn.disabled = currentPage === pages.length - 1;
+
+      const padZero = (n) => n.toString().padStart(2, '0');
+      catCounter.textContent = `${padZero(currentPage + 1)} / ${padZero(pages.length)}`;
+      setupScrollAnimation();
+    }
+
+    function setupScrollAnimation() {
+      if (observer) observer.disconnect();
+      const options = { root: null, rootMargin: '0px 0px -50px 0px', threshold: 0.15 };
+      observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, options);
+      document.querySelectorAll('.white-cube-item').forEach(item => observer.observe(item));
+    }
+
+    catPrevBtn.addEventListener('click', () => {
+      if (currentPage > 0) {
+        currentPage--;
+        renderConfirmedPage();
+        window.scrollTo(0, 0);
+      }
+    });
+
+    catNextBtn.addEventListener('click', () => {
+      if (currentPage < pages.length - 1) {
+        currentPage++;
+        renderConfirmedPage();
+        window.scrollTo(0, 0);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSamplingEra();
+      renderDetail('casablanca');
+      renderDetail('matieres');
+      renderConfirmedPage();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0 确认数据排版方案展示</title>
+<style>
+  /* =========================================
+     全局变量与基础规范
+     ========================================= */
+  :root {
+    --bg: #ffffff;
+    --bg-light: #f9f9f9;
+    --ink: #1a1a1a;
+    --ink-soft: #666666;
+    --line: #e5e5e5;
+    --accent-blue: #364ef5;
+    
+    --wire-bg: #f5f5f5;
+    --wire-cross: #dcdcdc;
+    
+    --font-family: "Hiragino Sans", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    --container-max: 1100px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-family);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+  }
+
+  /* 图片占位符 */
+  .wire {
+    position: relative;
+    background: var(--wire-bg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wire::before, .wire::after {
+    content: ''; position: absolute; background: var(--wire-cross);
+  }
+  .wire::before { width: 141%; height: 1px; transform: rotate(45deg); }
+  .wire::after  { width: 141%; height: 1px; transform: rotate(-45deg); }
+  
+  /* 针对 0 成立的特殊占位 */
+  .wire.zero-state {
+    background: #fafafa;
+    border: 1px dashed #ccc;
+  }
+  .wire.zero-state::before, .wire.zero-state::after {
+    display: none; /* 去掉叉叉，换成纯虚线 */
+  }
+  .wire.zero-state span {
+    color: #bbb; font-size: 14px; font-weight: 600; letter-spacing: 2px;
+  }
+
+  /* =========================================
+     顶部分页导航 (Tab 切换)
+     ========================================= */
+  .header {
+    position: sticky; top: 0; width: 100%; height: 72px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center;
+  }
+  .header-inner {
+    max-width: var(--container-max); margin: 0 auto; padding: 0 24px;
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+  }
+  .logo { font-size: 16px; font-weight: 700; color: var(--ink); }
+  .tabs { display: flex; gap: 8px; }
+  .tab-btn {
+    background: none; border: none; padding: 8px 16px;
+    font-size: 14px; font-weight: 500; color: var(--ink-soft);
+    cursor: pointer; border-radius: 40px; transition: all 0.3s;
+  }
+  .tab-btn:hover { background: var(--bg-light); color: var(--ink); }
+  .tab-btn.active { background: var(--ink); color: #fff; }
+
+  /* =========================================
+     页面视图控制
+     ========================================= */
+  .page-view { display: none; opacity: 0; transition: opacity 0.4s ease; }
+  .page-view.active { display: block; opacity: 1; }
+  .main-container { max-width: var(--container-max); margin: 0 auto; padding: 60px 24px 100px; }
+  .section-header { margin-bottom: 40px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+  .section-header h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .section-header p { font-size: 14px; color: var(--ink-soft); }
+
+  /* =========================================
+     方案一：只展示成功的卡片 (零数据隐藏)
+     ========================================= */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .card .wire { width: 100%; aspect-ratio: 16 / 9; border-radius: 4px; }
+  .card-title { font-size: 16px; font-weight: 600; }
+  .card-meta { font-size: 13px; color: var(--ink-soft); }
+  
+  /* =========================================
+     方案二：极简文字列表 (所有数据平权)
+     ========================================= */
+  .list-row {
+    display: flex; align-items: center; gap: 24px;
+    padding: 16px 0; border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .list-row:first-child { border-top: 1px solid var(--line); }
+  .list-date { width: 100px; color: var(--ink-soft); font-family: monospace; }
+  .list-data { flex: 1; font-weight: 500; }
+  .list-status { width: 100px; text-align: right; font-size: 12px; font-weight: 600; }
+  .status-ok { color: #2e7d32; }
+  .status-zero { color: #999; }
+  .list-link { width: 80px; text-align: right; }
+
+  /* =========================================
+     方案三：统一网格，无图占位
+     ========================================= */
+  /* 复用 .grid-3 和 .card */
+
+  /* =========================================
+     方案四：状态标签卡 (卡片 + Badge)
+     ========================================= */
+  .card-badge-wrap { position: relative; }
+  .badge {
+    position: absolute; top: 12px; right: 12px;
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    backdrop-filter: blur(4px); z-index: 2;
+  }
+  .badge-ok { background: rgba(0,0,0,0.7); color: #fff; }
+  .badge-zero { background: rgba(255,255,255,0.8); border: 1px solid #ccc; color: #666; }
+  
+  .p-link { color: var(--accent-blue); text-decoration: underline; cursor: pointer; }
+
+  @media (max-width: 768px) {
+    .grid-3 { grid-template-columns: 1fr; }
+    .list-row { flex-wrap: wrap; gap: 8px; }
+    .list-date, .list-status, .list-link { width: auto; text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 顶部分页 Tab -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">DATA LOG</div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab1')">方案一：隐藏无图</button>
+        <button class="tab-btn" onclick="switchTab('tab2')">方案二：纯文字平权</button>
+        <button class="tab-btn" onclick="switchTab('tab3')">方案三：虚线占位</button>
+        <button class="tab-btn" onclick="switchTab('tab4')">方案四：徽章角标</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================
+       方案一：隐藏无图（只显示成功案例）
+       ========================================= -->
+  <div id="tab1" class="page-view active">
+    <main class="main-container">
+      <div class="section-header">
+        <h2>方案一：隐藏无图（数据折叠）</h2>
+        <p>0 成立的项目不在首页展示大图。首页只放最精华的成功案例。总数在文字里提一嘴（如：已完成 10 场抽样，7 场确认成立）。</p>
+      </div>
+      <div class="grid-3">
+        <!-- 成功卡片 1 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 A：已确认成立</div>
+          <div class="card-meta">样本场次：1 | 品牌数量：1</div>
+        </div>
+        <!-- 成功卡片 2 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 B：已确认成立</div>
+          <div class="card-meta">样本场次：1 | 品牌数量：1</div>
+        </div>
+        <!-- 成功卡片 3 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 C：已确认成立</div>
+          <div class="card-meta">样本场次：1 | 品牌数量：1</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- =========================================
+       方案二：纯文字平权（所有数据都在）
+       ========================================= -->
+  <div id="tab2" class="page-view">
+    <main class="main-container">
+      <div class="section-header">
+        <h2>方案二：极简文字列表</h2>
+        <p>不管有没有图，都作为记录一条条列出来。不占空间，极其严谨，适合高密度信息展示。</p>
+      </div>
+      
+      <!-- 成功记录 -->
+      <div class="list-row">
+        <div class="list-date">2024.09.29</div>
+        <div class="list-data">品牌 A | 样本：50 | 确认成立：1</div>
+        <div class="list-status status-ok">已确认</div>
+        <div class="list-link"><a class="p-link">查看详情</a></div>
+      </div>
+      
+      <!-- 0 成立记录 -->
+      <div class="list-row" style="background: #fafafa;">
+        <div class="list-date">2024.09.14</div>
+        <div class="list-data">品牌 X | 样本：50 | 确认成立：0</div>
+        <div class="list-status status-zero">未成立</div>
+        <div class="list-link"><a class="p-link" style="color: #999;">查看归档</a></div>
+      </div>
+
+      <!-- 成功记录 -->
+      <div class="list-row">
+        <div class="list-date">2024.09.01</div>
+        <div class="list-data">品牌 B | 样本：100 | 确认成立：2</div>
+        <div class="list-status status-ok">已确认</div>
+        <div class="list-link"><a class="p-link">查看详情</a></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- =========================================
+       方案三：统一网格，虚线占位
+       ========================================= -->
+  <div id="tab3" class="page-view">
+    <main class="main-container">
+      <div class="section-header">
+        <h2>方案三：统一网格，虚线占位</h2>
+        <p>为了让网格保持绝对的整齐，没有成立图片的场次，用统一的“无数据”虚线框占位。视觉上不突兀，结构上又完整。</p>
+      </div>
+      <div class="grid-3">
+        <!-- 成功 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 A：确认成立</div>
+          <div class="card-meta">数据完美</div>
+        </div>
+        <!-- 0 成立（用虚线占位） -->
+        <div class="card">
+          <div class="wire zero-state"><span>NO DATA</span></div>
+          <div class="card-title" style="color: #999;">品牌 X：未确认成立</div>
+          <div class="card-meta">样本：50 | 成立：0</div>
+        </div>
+        <!-- 成功 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 B：确认成立</div>
+          <div class="card-meta">数据完美</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- =========================================
+       方案四：徽章角标
+       ========================================= -->
+  <div id="tab4" class="page-view">
+    <main class="main-container">
+      <div class="section-header">
+        <h2>方案四：徽章角标</h2>
+        <p>给卡片加上状态标签。如果是 0 成立，卡片整体置灰或降低不透明度，右上角打上“未成立”的章，坦白且清晰。</p>
+      </div>
+      <div class="grid-3">
+        <!-- 成功卡片 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 A：确认成立</div>
+        </div>
+        
+        <!-- 0 成立卡片（带角标且半透明） -->
+        <div class="card" style="opacity: 0.6;">
+          <div class="card-badge-wrap">
+            <span class="badge badge-zero">未成立</span>
+            <div class="wire"></div>
+          </div>
+          <div class="card-title">品牌 X：数据留档</div>
+        </div>
+
+        <!-- 成功卡片 -->
+        <div class="card">
+          <div class="wire"></div>
+          <div class="card-title">品牌 B：确认成立</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Tab 切换逻辑
+    function switchTab(tabId) {
+      // 移除所有按钮的激活状态
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      // 移除所有页面的激活状态
+      document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
+
+      // 激活当前点击的按钮
+      event.target.classList.add('active');
+      // 激活对应的页面
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
+</body>
+</html>

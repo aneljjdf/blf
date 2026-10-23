@@ -59,7 +59,6 @@ body {
   position: fixed;
   inset: 0;
   z-index: -2;
-  /* 叠加一层灰绿和模糊，让背景彻底退居幕后 */
   backdrop-filter: blur(12px) brightness(0.6) sepia(0.3) hue-rotate(90deg);
   background: rgba(28, 34, 31, 0.7);
   pointer-events: none;
@@ -121,7 +120,6 @@ body::after {
   position: relative;
 }
 
-/* 左侧红线小装饰（模拟截图左上角） */
 .title-group::before {
   content: '';
   position: absolute;
@@ -141,7 +139,6 @@ body::after {
   font-weight: 500;
 }
 
-/* 标题：干净的白色，带轻微错位故障和虚影 */
 .title {
   font-family: var(--font-title);
   font-size: 24px;
@@ -151,7 +148,6 @@ body::after {
   cursor: text;
   letter-spacing: 0.1em;
   line-height: 1.2;
-  /* 轻微错位，红绿边缘 */
   text-shadow: 
     -2px 0 0 rgba(163, 69, 76, 0.6),
      2px 0 0 rgba(98, 139, 130, 0.6),
@@ -198,7 +194,7 @@ body::after {
 /* ===== 控制台面板（深色半透明） ===== */
 .console-panel {
   background: rgba(20, 26, 23, 0.65);
-  border: 1px dashed rgba(163, 69, 76, 0.4); /* 虚线框 */
+  border: 1px dashed rgba(163, 69, 76, 0.4);
   border-left: 4px solid var(--accent-red);
   padding: 16px 20px;
   margin-bottom: 24px;
@@ -210,7 +206,6 @@ body::after {
   position: relative;
 }
 
-/* 面板四角的裁切标记 */
 .console-panel::before, .console-panel::after {
   content: ''; position: absolute; width: 8px; height: 8px; pointer-events: none;
 }
@@ -293,18 +288,16 @@ body::after {
 .window-frame {
   background: var(--paper);
   color: var(--text-main);
-  /* 用多重阴影和边框制造纸张的厚度与叠层感 */
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 
     0 20px 50px rgba(0, 0, 0, 0.7),
-    inset 0 0 0 4px var(--paper), /* 纸张内留白 */
-    inset 0 0 0 5px rgba(163, 69, 76, 0.3); /* 内红线 */
+    inset 0 0 0 4px var(--paper),
+    inset 0 0 0 5px rgba(163, 69, 76, 0.3);
   display: flex;
   flex-direction: column;
   position: relative;
 }
 
-/* 纸张纹理：淡淡的网格 */
 .window-frame::before {
   content: '';
   position: absolute;
@@ -317,7 +310,6 @@ body::after {
   z-index: 0;
 }
 
-/* 伪元素制造右上角的「虚化印章」感 */
 .window-frame::after {
   content: 'BABEL ARCHIVE';
   position: absolute;
@@ -333,7 +325,7 @@ body::after {
 }
 
 .window-header {
-  background: var(--accent-green); /* 深绿头部 */
+  background: var(--accent-green);
   color: var(--paper);
   padding: 10px 20px;
   display: flex;
@@ -381,7 +373,7 @@ body::after {
   line-height: 2;
   letter-spacing: 0.05em;
   color: var(--text-main);
-  caret-color: var(--accent-red); /* 光标用灰红 */
+  caret-color: var(--accent-red);
   resize: none;
   padding: 30px 32px;
   overflow: hidden;
@@ -400,7 +392,7 @@ body.font-apple #editor { font-family: -apple-system, sans-serif; font-weight: 4
 body.font-korean #editor { font-family: "Noto Sans KR", "Noto Sans SC", sans-serif; font-weight: 400; letter-spacing: 0.02em; }
 
 .window-footer {
-  border-top: 1px dashed rgba(26, 32, 29, 0.3); /* 虚线脚注 */
+  border-top: 1px dashed rgba(26, 32, 29, 0.3);
   padding: 12px 20px;
   display: flex;
   justify-content: space-between;
@@ -441,7 +433,7 @@ body.font-korean #editor { font-family: "Noto Sans KR", "Noto Sans SC", sans-ser
   #editor { font-size: 15px; padding: 22px; }
   .console-panel { padding: 12px; gap: 12px; }
   .panel-label { min-width: 100%; margin-bottom: -6px; }
-  .title-group::before { display: none; } /* 手机端隐藏左侧红线免得出界 */
+  .title-group::before { display: none; }
 }
 </style>
 </head>
@@ -528,7 +520,6 @@ function autoGrow() {
 
 function applyMask(percent) {
   const alpha = percent / 100 * 0.95; 
-  // 应用灰绿色蒙版
   bgMask.style.background = `rgba(28, 34, 31, ${alpha})`;
   maskValue.textContent = percent;
 }
@@ -586,7 +577,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (t) editor.value = t;
 
   const m = localStorage.getItem(KEY_MASK);
-  const initMask = m !== null ? parseInt(m, 10) : 70; // 默认遮罩调到70配合背景虚化
+  const initMask = m !== null ? parseInt(m, 10) : 70;
   maskRange.value = initMask;
   applyMask(initMask);
 
@@ -612,7 +603,7 @@ titleEl.addEventListener('input', () => {
   titleTimer = setTimeout(() => {
     localStorage.setItem(KEY_TITLE, titleEl.textContent.trim());
     showSaved();
-  }, 600);
+  }, 1500); // 标题防抖提高到1.5秒
 });
 titleEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -624,6 +615,7 @@ titleEl.addEventListener('blur', () => {
   localStorage.setItem(KEY_TITLE, titleEl.textContent.trim());
 });
 
+/* 修改：文本防抖拉长到 1.5 秒，并且输入时不会频繁弹窗 */
 let textTimer = null;
 editor.addEventListener('input', () => {
   autoGrow();
@@ -631,8 +623,20 @@ editor.addEventListener('input', () => {
   textTimer = setTimeout(() => {
     localStorage.setItem(KEY_TEXT, editor.value);
     showSaved();
-  }, 600);
+  }, 1500); // 从 600ms 提高到 1500ms
 });
+
+/* 确保在离开页面、切出窗口、或者失去焦点时，把没存的内容强行存进去 */
+function forceSave() {
+  if (editor.value !== localStorage.getItem(KEY_TEXT)) {
+    localStorage.setItem(KEY_TEXT, editor.value);
+  }
+  if (titleEl.textContent.trim() !== localStorage.getItem(KEY_TITLE)) {
+    localStorage.setItem(KEY_TITLE, titleEl.textContent.trim());
+  }
+}
+window.addEventListener('beforeunload', forceSave);
+window.addEventListener('blur', forceSave);
 
 let savedTimer = null;
 function showSaved() {

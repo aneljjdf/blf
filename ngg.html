@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MY LOG | Editorial</title>
+<style>
+  /* =========================================
+     韩系极简全局变量
+     ========================================= */
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --ink: #222222;
+    --ink-soft: #888888;
+    --line: #ececec;
+
+    --blue: #3B4A6B;
+    --blue-bg: #F2F4F8;
+
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --radius-pill: 100px;
+
+    --font-main: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "PingFang SC", "Helvetica Neue", sans-serif;
+    --font-serif: "Times New Roman", Times, serif;
+
+    --container-max: 1080px;
+    --header-height: 80px;
+    --breadcrumb-height: 45px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.7;
+    letter-spacing: -0.02em;
+  }
+
+  img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1); }
+  .img-wrapper { overflow: hidden; border-radius: var(--radius-md); background: #eee; }
+
+  /* =========================================
+     顶栏
+     ========================================= */
+  .header {
+    position: fixed; top: 0; width: 100%; height: var(--header-height);
+    background: rgba(250, 250, 250, 0.8);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    z-index: 200; border-bottom: 1px solid rgba(0,0,0,0.03);
+  }
+
+  .header-inner {
+    max-width: var(--container-max); margin: 0 auto; padding: 0 24px;
+    height: 100%; display: flex; justify-content: space-between; align-items: center;
+  }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.04em; cursor: pointer; }
+  .nav-links a { font-size: 14px; font-weight: 500; color: var(--ink-soft); text-decoration: none; margin-left: 32px; cursor: pointer; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--ink); }
+
+  .page-view { display: none; opacity: 0; transition: opacity 0.5s ease; }
+  .page-view.active { display: block; opacity: 1; }
+
+  .main-container {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 60px 24px 120px;
+    padding-top: calc(var(--header-height) + 60px);
+  }
+
+  /* 带有面包屑的页面，特殊处理顶部 padding */
+  .page-view.has-breadcrumb .main-container {
+    padding-top: calc(var(--header-height) + var(--breadcrumb-height) + 40px) !important;
+    margin-top: 0 !important; 
+  }
+
+  /* =========================================
+     首页
+     ========================================= */
+  .hero {
+    position: relative; height: 70vh; min-height: 500px;
+    margin: 0 24px; border-radius: var(--radius-lg); overflow: hidden;
+    margin-top: calc(var(--header-height) + 10px); background: #ddd;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop') center/cover;
+    opacity: 0.8;
+  }
+  .hero::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
+  }
+  .hero-content { position: absolute; z-index: 2; bottom: 60px; left: 60px; right: 60px; color: #fff; }
+  .hero-title { font-size: 48px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 12px; }
+  .hero-sub { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.8); letter-spacing: 0; }
+
+  .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; margin-top: 80px; }
+  .section-header h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; }
+
+  .btn-pill {
+    display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #fff;
+    border: 1px solid var(--line); border-radius: var(--radius-pill); text-decoration: none; color: var(--ink);
+    font-size: 13px; font-weight: 500; transition: all 0.3s; cursor: pointer;
+  }
+  .btn-pill:hover { border-color: var(--ink); }
+
+  .events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
+  .event-card { cursor: pointer; display: flex; flex-direction: column; }
+  .event-card .img-wrapper { aspect-ratio: 4 / 5; flex-shrink: 0; }
+  .event-card:hover img { transform: scale(1.05); }
+  .event-card-info { margin-top: 16px; flex: 1; display: flex; flex-direction: column; }
+  .event-card-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; text-transform: capitalize; letter-spacing: 0.01em; }
+  .event-card-meta { font-size: 13px; color: var(--ink-soft); }
+
+  .stat-card {
+    aspect-ratio: 4 / 5;
+    background: #fdfdfc;
+    border: 1px solid #e8e8e6;
+    border-radius: var(--radius-md);
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    cursor: default;
+  }
+  .stat-top { font-size: 13px; font-weight: 500; color: #999; letter-spacing: 0.2em; }
+  .stat-middle { display: flex; flex-direction: column; gap: 20px; }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 4px; letter-spacing: 0.05em; }
+  .stat-value { font-size: 30px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--ink); }
+  .stat-unit { font-size: 13px; color: #999; margin-left: 4px; font-weight: 400; }
+  .stat-rate { font-size: 30px; color: var(--ink); font-weight: 600; letter-spacing: -0.03em; }
+
+  .category-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .category-tags span {
+    font-size: 12px; color: var(--ink-soft); border: 1px solid var(--line); padding: 2px 10px; border-radius: var(--radius-pill);
+    transition: all 0.3s;
+  }
+  .event-card:hover .category-tags span { border-color: #ccc; color: var(--ink); }
+
+  #latest-news { border-top: 1px solid var(--line); padding-top: 60px; scroll-margin-top: calc(var(--header-height) + 40px); }
+  .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .news-col { display: flex; flex-direction: column; }
+  .news-date { font-size: 13px; color: var(--ink-soft); margin-bottom: 16px; font-weight: 500;}
+  .news-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; line-height: 1.5; }
+  .news-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .news-links li { position: relative; padding-left: 12px; }
+  .news-links li::before { content: '•'; position: absolute; left: 0; color: var(--ink-soft); font-size: 12px; }
+  .p-link { font-size: 14px; color: var(--ink); font-weight: 500; text-decoration: none; cursor: pointer; transition: color 0.3s; }
+  .p-link:hover { color: var(--blue); }
+
+  /* =========================================
+     完全成立页 - 白立方画廊样式
+     ========================================= */
+  .white-cube-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12vh;
+    padding-bottom: 10vh;
+  }
+
+  .white-cube-item {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: left;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.2, 0, 0, 1), transform 0.8s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .white-cube-item.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .white-cube-item .img-wrapper {
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .white-cube-item img {
+    width: 100%;
+    height: auto;
+    max-height: 75vh;
+    object-fit: contain;
+  }
+
+  .white-cube-info {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .white-cube-title {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 16px;
+    color: #999;
+    letter-spacing: 0.05em;
+    font-weight: 400;
+  }
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 80px;
+    margin-bottom: 20px;
+  }
+  .pag-btn {
+    background: none; border: none; padding: 10px; cursor: pointer; color: var(--ink);
+    transition: opacity 0.3s, transform 0.3s; display: flex; align-items: center; justify-content: center;
+  }
+  .pag-btn:disabled { opacity: 0.2; cursor: default; }
+  .pag-btn:not(:disabled):hover { transform: scale(1.1); }
+  .pag-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .pag-counter {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+
+  /* =========================================
+     档案页 / 分类页 通用 View
+     ========================================= */
+  .page-intro { margin-bottom: 40px; }
+  .page-intro-title { font-size: 36px; font-weight: 600; letter-spacing: -0.04em; margin-bottom: 12px; }
+  .page-intro-desc { font-size: 14px; color: var(--ink-soft); }
+
+  .highlight-card {
+    background: var(--surface); border-radius: var(--radius-md);
+    padding: 24px; display: flex; gap: 32px; align-items: center; cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.2, 0, 0, 1); margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+  }
+  .highlight-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.06); }
+  .highlight-card .img-wrapper { width: 200px; aspect-ratio: 4 / 3; flex-shrink: 0; border-radius: 8px; }
+  .highlight-card:hover img { transform: scale(1.08); }
+  .highlight-card .content { flex: 1; }
+
+  .meta-data { font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;}
+  .meta-data span { color: var(--ink); }
+  .meta-badge { padding: 4px 10px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 600; background: var(--blue-bg); color: var(--blue); }
+  .tl-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.02em; color: var(--ink); }
+  .tl-desc { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+  .archive-text-block {
+    background: var(--surface); border-radius: var(--radius-md);
+    margin-top: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.02); overflow: hidden;
+  }
+  .archive-header {
+    padding: 24px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    font-size: 15px; font-weight: 600; color: var(--ink); user-select: none;
+  }
+  .archive-content {
+    padding: 0 24px 24px 24px; border-top: 1px solid var(--line); margin: 0 24px;
+    padding-left: 0; padding-right: 0; font-size: 14px; color: var(--ink-soft); display: none;
+  }
+  .text-row { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #f5f5f5; }
+  .text-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .text-main { color: var(--ink); font-weight: 500; }
+  .text-sub { font-size: 13px; color: var(--ink-soft); text-align: right; }
+
+  /* =========================================
+     详情页
+     ========================================= */
+  .breadcrumb-wrapper {
+    background: var(--bg); height: var(--breadcrumb-height);
+    position: fixed; top: var(--header-height); left: 0; width: 100%; z-index: 190; display: flex; align-items: center;
+  }
+  .breadcrumb-list {
+    list-style: none; display: flex; align-items: center; flex-wrap: wrap;
+    font-size: 13px; font-weight: 500; color: var(--ink-soft); max-width: var(--container-max); margin: 0 auto; padding: 0 24px; width: 100%;
+  }
+  .breadcrumb-list li { display: flex; align-items: center; }
+  .breadcrumb-list li::after { content: '/'; margin: 0 12px; color: #ccc; }
+  .breadcrumb-list li:last-child::after { content: ''; }
+  .breadcrumb-list a { 
+    color: var(--ink-soft); 
+    text-decoration: none; 
+    cursor: pointer; 
+    transition: color 0.3s; 
+    background: transparent; 
+    outline: none;
+  }
+  .breadcrumb-list a:hover { color: var(--ink); }
+  .breadcrumb-list a:focus { outline: none; }
+
+  .article-layout { max-width: 800px; margin: 0 auto; padding: 60px 24px 120px; padding-top: calc(var(--header-height) + var(--breadcrumb-height) + 40px); }
+
+  .article-header { margin-bottom: 40px; text-align: center; }
+  .article-title { font-size: 40px; font-weight: 600; line-height: 1.3; margin-bottom: 20px; letter-spacing: -0.04em; }
+
+  .article-summary { font-size: 16px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 0; letter-spacing: 0.02em; }
+  .article-summary span { color: var(--ink); font-weight: 600; margin: 0 2px; }
+
+  .article-media-group { margin: 40px 0 60px 0; display: flex; flex-direction: column; gap: 40px; }
+  .article-media-img { width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: transparent; }
+  .article-media-img img { width: 100%; height: auto; display: block; }
+  .article-body p { font-size: 16px; line-height: 1.9; color: #444; margin-bottom: 32px; }
+
+  .article-note { margin-top: 60px; }
+  .article-note .note-title { font-size: 12px; font-weight: 500; color: #999; margin-bottom: 8px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .article-note p { font-size: 15px; color: var(--ink); margin-bottom: 0; line-height: 1.8; font-weight: 500; }
+
+  /* =========================================
+     页脚
+     ========================================= */
+  .footer { padding: 80px 24px 40px; border-top: 1px solid var(--line); background: var(--bg); }
+  .footer-inner { max-width: var(--container-max); margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .footer-brand { font-size: 20px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 16px; }
+  .footer-links { list-style: none; display: flex; gap: 24px; margin-bottom: 40px; }
+  .footer-links a { color: var(--ink-soft); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.3s;}
+  .footer-links a:hover { color: var(--ink); }
+  .footer-bottom { font-size: 12px; color: #aaa; }
+
+  /* =========================================
+     响应式
+     ========================================= */
+  @media (max-width: 900px) {
+    .events-grid { grid-template-columns: repeat(2, 1fr); }
+    .news-grid { grid-template-columns: 1fr; gap: 40px; }
+    .highlight-card { flex-direction: column; align-items: flex-start; gap: 20px; padding: 16px;}
+    .highlight-card .img-wrapper { width: 100%; aspect-ratio: 16/9; }
+    .hero { margin: 0 16px; height: 60vh; }
+    .hero-content { bottom: 40px; left: 24px; right: 24px; }
+    .hero-title { font-size: 36px; }
+    .stat-value, .stat-rate { font-size: 24px; }
+
+    .white-cube-list { gap: 10vh; }
+  }
+  @media (max-width: 768px) {
+    .article-title { font-size: 30px; }
+    .main-container { padding-left: 16px; padding-right: 16px; }
+    .article-layout { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo" onclick="switchPage('home')">MY LOG.</div>
+      <div class="nav-links">
+        <a href="#" onclick="switchPage('home'); return false;">Home</a>
+        <a href="#">About</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 1. 首页 -->
+  <div id="view-home" class="page-view active">
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title">Map the New World.</h1>
+        <p class="hero-sub">Welcome to my digital garden. Here I document my thoughts on design and code.</p>
+      </div>
+    </section>
+
+    <main class="main-container" style="padding-top: 0;">
+      <div class="section-header" style="margin-top: 0;">
+        <h2>Explore</h2>
+      </div>
+
+      <div class="events-grid">
+        <div class="event-card" onclick="switchPage('category')">
+          <div class="img-wrapper" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+             <span style="color: #ddd; font-size: 24px;">Archive</span>
+          </div>
+          <div class="event-card-info">
+            <div class="event-card-title">完全成立</div>
+          </div>
+        </div>
+
+        <div class="event-card" onclick="switchPage('instruction')">
+          <div class="img-wrapper" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+             <span style="color: #ddd; font-size: 24px;">Instructions</span>
+          </div>
+          <div class="event-card-info">
+            <div class="event-card-title">修正指令</div>
+            <div class="category-tags">
+              <span>待修改</span>
+              <span>已打回</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="event-card" style="cursor: default;">
+          <div class="stat-card">
+            <div class="stat-top">SINCE 2023</div>
+            <div class="stat-middle">
+              <div class="stat-item">
+                <div class="stat-label">审阅造型</div>
+                <div class="stat-value">600,000 <span class="stat-unit">套</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">确认成立</div>
+                <div class="stat-value">500 <span class="stat-unit">套</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">成立率</div>
+                <div class="stat-value stat-rate">0.07%</div>
+              </div>
+            </div>
+          </div>
+          <div class="event-card-info">
+            <div class="event-card-title">数据公告</div>
+            <div class="event-card-meta">从 2023 年至今的抽样统计</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Archive Collections</h2>
+      </div>
+
+      <div class="events-grid" id="collections-grid"></div>
+
+      <section id="latest-news">
+        <div class="section-header">
+          <h2>Latest News</h2>
+          <a class="btn-pill" onclick="switchPage('archive')">See all →</a>
+        </div>
+        <div class="news-grid" id="news-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 2. 档案页 -->
+  <div id="view-archive" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><a onclick="goToNews()">News</a></li>
+        <li><span class="current" style="color: var(--ink);">Archive</span></li>
+      </ul>
+    </div>
+
+    <main class="main-container">
+      <div class="page-intro">
+        <div class="page-intro-title">Archive.</div>
+        <div class="page-intro-desc">数据统计自 2026.07.01 起</div>
+      </div>
+
+      <div id="success-list"></div>
+
+      <div class="archive-text-block" id="zero-section">
+        <div class="archive-header" onclick="toggleAccordion()">
+          <span>查看未成立归档记录 (<span id="zero-count">1</span>)</span>
+          <span id="toggle-icon">+</span>
+        </div>
+        <div class="archive-content" id="acc-content"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 3. 完全成立页 (移除了 Explore 面包屑) -->
+  <div id="view-category" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><span class="current" style="color: var(--ink);">完全成立</span></li>
+      </ul>
+    </div>
+
+    <main class="main-container" style="padding-bottom: 0;">
+      <div class="page-intro">
+        <div class="page-intro-title">Confirmed.</div>
+        <div class="page-intro-desc">已确认成立的归档展示（向下滑动）</div>
+      </div>
+
+      <div class="white-cube-list" id="category-grid"></div>
+
+      <div class="pagination-controls">
+        <button class="pag-btn" id="cat-prev" disabled>
+          <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <div class="pag-counter" id="cat-counter">01 / 02</div>
+        <button class="pag-btn" id="cat-next">
+          <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- 4. 修正指令专属页 (移除了 Explore 面包屑) -->
+  <div id="view-instruction" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><span class="current" style="color: var(--ink);">修正指令</span></li>
+      </ul>
+    </div>
+
+    <main class="main-container">
+      <div class="page-intro">
+        <div class="page-intro-title">Instructions.</div>
+        <div class="page-intro-desc">记录所有被打回、需调整的款式样本</div>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="filterCategory('all', event)">全部</button>
+        <button class="filter-btn" onclick="filterCategory('pending', event)">待修改</button>
+        <button class="filter-btn" onclick="filterCategory('rejected', event)">已打回</button>
+      </div>
+
+      <div class="events-grid">
+        <div class="event-card category-item" data-category="pending" onclick="openDetail('casablanca')">
+          <div class="img-wrapper" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+             <span style="color: #ddd; font-size: 24px;">Pending</span>
+          </div>
+          <div class="event-card-info">
+            <div class="event-card-title">内衬纹路修正</div>
+            <div class="event-card-meta">待修改</div>
+          </div>
+        </div>
+
+        <div class="event-card category-item" data-category="rejected" onclick="openDetail('matieres')">
+          <div class="img-wrapper" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+             <span style="color: #ddd; font-size: 24px;">Rejected</span>
+          </div>
+          <div class="event-card-info">
+            <div class="event-card-title">版型微调记录</div>
+            <div class="event-card-meta">已打回</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 5. Casablanca 详情页 -->
+  <div id="view-detail-casablanca" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><a onclick="goToNews()">News</a></li>
+        <li><a onclick="switchPage('archive')">Archive</a></li>
+        <li><span class="current" id="crumb-casablanca" style="color: var(--ink);"></span></li>
+      </ul>
+    </div>
+
+    <main class="article-layout">
+      <header class="article-header">
+        <h1 class="article-title" id="title-casablanca"></h1>
+        <div class="article-summary" id="summary-casablanca"></div>
+      </header>
+
+      <div class="article-body">
+        <div class="article-media-group">
+           <div class="article-media-img"><img src="./images/casablanca/01.JPG" alt="Casablanca 01"></div>
+           <div class="article-media-img"><img src="./images/casablanca/02.png" alt="Casablanca 02"></div>
+        </div>
+
+        <div class="article-note">
+          <div class="note-title">修正指令</div>
+          <p>内衬纹路像老头衬衫，换掉后视成立。已收录进/02</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 6. Matières Fécales 详情页 -->
+  <div id="view-detail-matieres" class="page-view has-breadcrumb">
+    <div class="breadcrumb-wrapper">
+      <ul class="breadcrumb-list">
+        <li><a onclick="switchPage('home')">Top</a></li>
+        <li><a onclick="goToNews()">News</a></li>
+        <li><a onclick="switchPage('archive')">Archive</a></li>
+        <li><span class="current" id="crumb-matieres" style="color: var(--ink);"></span></li>
+      </ul>
+    </div>
+
+    <main class="article-layout">
+      <header class="article-header">
+        <h1 class="article-title" id="title-matieres"></h1>
+        <div class="article-summary" id="summary-matieres"></div>
+      </header>
+
+      <div class="article-body">
+        <div class="article-media-group">
+           <div class="article-media-img"><img src="./images/matieres-fecales/01.JPG" alt="Matières Fécales 01"></div>
+        </div>
+
+        <div class="article-note">
+          <div class="note-title">修正指令</div>
+          <p>备注已收录进/01</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">MY LOG.</div>
+      <ul class="footer-links">
+        <li><a href="#" onclick="switchPage('home'); return false;">Home</a></li>
+        <li><a href="#">Archive</a></li>
+        <li><a href="#">GitHub</a></li>
+        <li><a href="#">Email</a></li>
+      </ul>
+      <div class="footer-bottom">
+        <span>© 2024 MY LOG. All Rights Reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 禁止浏览器自作聪明记住滚动位置
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+
+    const events = [
+      {
+        id: 'casablanca', date: '2026-10-03', name: 'Casablanca', season: 'SPRING 2026',
+        folder: 'casablanca', cover: '01.JPG', samples: 66, brands: 8, success: 1,
+        newsTitle: 'Casablanca 抽样记录已上传。', newsLink: '新增：Casablanca 抽样，成立 1 张',
+        articleTitle: 'Casablanca 抽样详细报告。'
+      },
+      {
+        id: 'matieres', date: '2026-09-30', name: 'Matières Fécales', season: 'SPRING 2027',
+        folder: 'matieres-fecales', cover: '01.JPG', samples: 22, brands: 4, success: 1,
+        newsTitle: 'Matières Fécales 抽样记录已上传。', newsLink: '新增：Matières Fécales 抽样，成立 1 张',
+        articleTitle: 'Matières Fécales 抽样详细报告。'
+      },
+      {
+        id: 'anon-1004', date: '2026-10-04', name: '匿名抽样测试', season: '',
+        folder: null, cover: null, samples: 22, brands: 4, success: 0,
+        newsTitle: '新增一条未成立抽样记录。', newsLink: '4个品牌，22场样本，0成立',
+        articleTitle: null
+      }
+    ];
+
+    const fmtDate = (iso) => iso.replaceAll('-', '.');
+
+    function renderCollections() {
+      const grid = document.getElementById('collections-grid');
+      const items = events.filter(e => e.folder && e.cover);
+
+      grid.innerHTML = items.map(e => `
+        <div class="event-card" onclick="openDetail('${e.id}')">
+          <div class="img-wrapper"><img src="./images/${e.folder}/${e.cover}" alt="${e.name}"></div>
+          <div class="event-card-info">
+            <div class="event-card-title">${e.name}</div>
+            <div class="event-card-meta">${e.season}</div>
+          </div>
+        </div>
+      `).join('') + `
+        <div class="event-card">
+          <div class="img-wrapper" style="background: #eaeaea; display: flex; align-items: center; justify-content: center;">
+             <span style="color: #ccc; font-size: 24px;">+</span>
+          </div>
+          <div class="event-card-info">
+            <div class="event-card-title">Coming Soon</div>
+            <div class="event-card-meta">TBA</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNews() {
+      const grid = document.getElementById('news-grid');
+      const latest = [...events].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+
+      grid.innerHTML = latest.map(e => {
+        const canOpen = e.id === 'casablanca' || e.id === 'matieres';
+        const click = canOpen ? `onclick="openDetail('${e.id}')"` : '';
+        return `
+          <div class="news-col">
+            <div class="news-date">${fmtDate(e.date)}</div>
+            <div class="news-title">${e.newsTitle}</div>
+            <ul class="news-links">
+              <li><a class="p-link" ${click}>${e.newsLink}</a></li>
+            </ul>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderArchive() {
+      const successEvents = events.filter(e => e.success > 0);
+      const zeroEvents = events.filter(e => e.success === 0);
+
+      document.getElementById('zero-count').textContent = zeroEvents.length;
+
+      document.getElementById('success-list').innerHTML = successEvents.map(e => `
+        <div class="highlight-card" onclick="openDetail('${e.id}')">
+          <div class="img-wrapper"><img src="./images/${e.folder}/${e.cover}" alt="${e.name} 01"></div>
+          <div class="content">
+            <div class="meta-data">
+              <span>${fmtDate(e.date)}</span>
+              <span>样本：${e.samples} | 品牌：${e.brands}</span>
+              <span class="meta-badge">成立 ${e.success} 张</span>
+            </div>
+            <div class="tl-title">${e.name} 抽样测试</div>
+            <div class="tl-desc">共计抽取 ${e.samples} 场样本，覆盖 ${e.brands} 个品牌，最终成功确认成立 ${e.success} 张。</div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('acc-content').innerHTML = zeroEvents.map(e => `
+        <div class="text-row">
+          <div>
+            <div class="text-main">${fmtDate(e.date)} - ${e.name}</div>
+            <div class="text-sub" style="text-align: left; margin-top: 4px;">样本 ${e.samples} 场 | 品牌 ${e.brands} 个</div>
+          </div>
+          <div class="text-sub" style="align-self: center; color: var(--ink-soft);">
+            成立 ${e.success} 个
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDetail(id) {
+      const e = events.find(x => x.id === id);
+      if (!e || !e.articleTitle) return;
+
+      document.getElementById('crumb-' + id).textContent = fmtDate(e.date);
+      document.getElementById('title-' + id).textContent = e.articleTitle;
+      document.getElementById('summary-' + id).innerHTML =
+        `本次共抽取 <span>${e.samples}</span> 场秀，涵盖 <span>${e.brands}</span> 个品牌，成立 <span>${e.success}</span> 张记录。`;
+    }
+
+    function switchPage(pageName) {
+      document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
+      document.getElementById('view-' + pageName).classList.add('active');
+      window.scrollTo(0, 0); 
+    }
+
+    function openDetail(brand) {
+      switchPage('detail-' + brand);
+    }
+
+    function goToNews() {
+      switchPage('home');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const newsSection = document.getElementById('latest-news');
+          if (newsSection) newsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    function toggleAccordion() {
+      const accContent = document.getElementById('acc-content');
+      const toggleIcon = document.getElementById('toggle-icon');
+      if (accContent.style.display === 'none' || accContent.style.display === '') {
+        accContent.style.display = 'block';
+        toggleIcon.textContent = '−';
+      } else {
+        accContent.style.display = 'none';
+        toggleIcon.textContent = '+';
+      }
+    }
+
+    function filterCategory(category, event) {
+      document.querySelectorAll('#view-instruction .filter-btn').forEach(btn => btn.classList.remove('active'));
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+      const items = document.querySelectorAll('#view-instruction .category-item');
+      items.forEach(item => {
+        if (category === 'all' || item.dataset.category === category) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    const confirmedData = [
+      { folder: 'etro', name: 'etro', file: '01.JPG' },
+      { folder: 'demobaza', name: 'demobaza', file: '01.webp' },
+      { folder: 'heos', name: 'heos', file: '01.png' },
+      { folder: 'parsons-bfa', name: 'parsons bfa', file: '01.JPG' },
+      { folder: 'hermes', name: 'Hermès', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '02.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '03.JPG' }
+    ];
+
+    const ITEMS_PER_PAGE = 4;
+    const pages = [];
+    for (let i = 0; i < confirmedData.length; i += ITEMS_PER_PAGE) {
+      pages.push(confirmedData.slice(i, i + ITEMS_PER_PAGE));
+    }
+
+    let currentPage = 0;
+    const catGrid = document.getElementById('category-grid');
+    const catPrevBtn = document.getElementById('cat-prev');
+    const catNextBtn = document.getElementById('cat-next');
+    const catCounter = document.getElementById('cat-counter');
+
+    let observer = null;
+
+    function renderConfirmedPage() {
+      catGrid.innerHTML = '';
+      const currentItems = pages[currentPage];
+
+      currentItems.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'white-cube-item';
+        el.innerHTML = `
+          <div class="img-wrapper">
+            <img src="./images/${item.folder}/${item.file}" alt="${item.name}">
+          </div>
+          <div class="white-cube-info">
+            <div class="white-cube-title">${item.name}</div>
+          </div>
+        `;
+        catGrid.appendChild(el);
+      });
+
+      catPrevBtn.disabled = currentPage === 0;
+      catNextBtn.disabled = currentPage === pages.length - 1;
+
+      const padZero = (n) => n.toString().padStart(2, '0');
+      catCounter.textContent = `${padZero(currentPage + 1)} / ${padZero(pages.length)}`;
+      setupScrollAnimation();
+    }
+
+    function setupScrollAnimation() {
+      if (observer) observer.disconnect();
+      const options = { root: null, rootMargin: '0px 0px -50px 0px', threshold: 0.15 };
+      observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, options);
+      document.querySelectorAll('.white-cube-item').forEach(item => observer.observe(item));
+    }
+
+    catPrevBtn.addEventListener('click', () => {
+      if (currentPage > 0) {
+        currentPage--;
+        renderConfirmedPage();
+        window.scrollTo(0, 0);
+      }
+    });
+
+    catNextBtn.addEventListener('click', () => {
+      if (currentPage < pages.length - 1) {
+        currentPage++;
+        renderConfirmedPage();
+        window.scrollTo(0, 0);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('acc-content').style.display = 'none';
+      renderCollections();
+      renderNews();
+      renderArchive();
+      renderDetail('casablanca');
+      renderDetail('matieres');
+      renderConfirmedPage();
+    });
+  </script>
+</body>
+</html>

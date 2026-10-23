@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLATEAU 骨架结构 · Wireframe</title>
+<style>
+  :root {
+    --ink: #1f1e1c;
+    --ink-soft: #6f6b63;
+    --ink-faint: #b0aba1;
+    --line: #e8e3da;
+    --line-strong: #d6d0c4;
+    --bg: #faf9f6;
+    --wire-bg: #f2efe9;      /* 预留位底色 */
+    --wire-cross: #d0cabf;   /* 叉叉颜色 */
+    --accent: #8a9a7b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "PingFang SC", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: .02em;
+  }
+  img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* ============================================================
+     通用：线框预留位（白底灰叉）
+     ============================================================ */
+  .wire {
+    position: relative;
+    background: var(--wire-bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* 灰色大叉叉 */
+  .wire::before,
+  .wire::after {
+    content: '';
+    position: absolute;
+    background: var(--wire-cross);
+  }
+  .wire::before {
+    width: 141%;
+    height: 1px;
+    transform: rotate(45deg);
+  }
+  .wire::after {
+    width: 141%;
+    height: 1px;
+    transform: rotate(-45deg);
+  }
+  /* 预留位标签 */
+  .wire-tag {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    font-size: 10px;
+    letter-spacing: .15em;
+    color: var(--ink-faint);
+    background: rgba(250,249,246,.85);
+    padding: 2px 7px;
+    border-radius: 2px;
+    z-index: 2;
+  }
+
+  /* 骨架注释标签（贴在结构外的说明） */
+  .anno {
+    display: inline-block;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    color: var(--accent);
+    border: 1px dashed var(--accent);
+    border-radius: 2px;
+    padding: 1px 7px;
+    margin-bottom: 8px;
+  }
+
+  /* ============================================================
+     页面框架
+     ============================================================ */
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 28px 100px;
+  }
+
+  /* 顶部说明 */
+  .doc-head {
+    padding: 70px 0 50px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 60px;
+  }
+  .doc-head .eyebrow {
+    font-size: 11px;
+    letter-spacing: .4em;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  .doc-head h1 {
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: .1em;
+    margin-bottom: 14px;
+  }
+  .doc-head p {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 2;
+    max-width: 600px;
+  }
+
+  /* ============================================================
+     骨架区块：通用容器
+     ============================================================ */
+  .block {
+    margin-bottom: 80px;
+  }
+  .block-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .block-title .num {
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .block-title h2 {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: .06em;
+  }
+  .block-title .line {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+  .block-note {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.9;
+    margin-bottom: 24px;
+    padding-left: 4px;
+  }
+
+  /* ============================================================
+     骨架 1：事件卡片（PLATEAU events 格式）
+     横排列表，每项是一个矩形图片位 + 下方极简文字
+     ============================================================ */
+  .sk-events {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .sk-events .wire {
+    aspect-ratio: 16 / 9;
+  }
+
+  /* ============================================================
+     骨架 2：内容卡片（PLATEAU journal / learning / usecase 格式）
+     左侧分类色点 → 通栏横图 → 标题 → 标签 → 日期
+     ============================================================ */
+  .sk-card {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 20px;
+    background: #fff;
+    margin-bottom: 24px;
+  }
+  /* 顶部：分类 + 日期 一行 */
+  .sk-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .sk-cat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: .14em;
+    color: var(--ink-soft);
+  }
+  .sk-cat .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .sk-date {
+    font-size: 11px;
+    letter-spacing: .1em;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  /* 横图预留位 */
+  .sk-card .wire {
+    aspect-ratio: 16 / 9;
+    margin-bottom: 18px;
+  }
+  /* 标题 */
+  .sk-title {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.6;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  /* 标签行 */
+  .sk-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .sk-tags span {
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 40px;
+    padding: 2px 10px;
+  }
+  /* 底部：城市/来源 + 修改日期 */
+  .sk-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: .06em;
+  }
+
+  /* ============================================================
+     骨架 3：大区块卡（PLATEAU "others" 格式）
+     左文右图 / 上文下图 两种变体
+     ============================================================ */
+  .sk-feature {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 20px;
+  }
+  .sk-feature-left {
+    flex: 1;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 220px;
+  }
+  .sk-feature-left h3 {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    margin-bottom: 10px;
+  }
+  .sk-feature-left p {
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: var(--ink-soft);
+  }
+  .sk-feature-right {
+    width: 44%;
+    flex-shrink: 0;
+  }
+  .sk-feature-right .wire {
+    height: 100%;
+    border: none;
+    border-left: 1px solid var(--line-strong);
+    border-radius: 0;
+  }
+
+  /* 上文下图变体（通栏大图） */
+  .sk-feature-stack {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 20px;
+  }
+  .sk-feature-stack .sk-feature-left {
+    min-height: auto;
+  }
+  .sk-feature-stack .sk-feature-right {
+    width: 100%;
+    height: 200px;
+  }
+  .sk-feature-stack .sk-feature-right .wire {
+    border-left: none;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  /* ============================================================
+     骨架 4：首页 Hero（PLATEAU index_hero）
+     ============================================================ */
+  .sk-hero {
+    position: relative;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .sk-hero .wire {
+    aspect-ratio: 21 / 9;
+  }
+  .sk-hero-text {
+    position: absolute;
+    left: 32px;
+    bottom: 32px;
+    z-index: 3;
+    max-width: 60%;
+  }
+  .sk-hero-text .t1 {
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: .1em;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,.35);
+    margin-bottom: 12px;
+  }
+  .sk-hero-text .t2 {
+    font-size: 12px;
+    letter-spacing: .06em;
+    color: rgba(255,255,255,.85);
+    line-height: 1.8;
+  }
+
+  /* ============================================================
+     骨架 5：时间线单列（你要的，横图版）
+     ============================================================ */
+  .sk-timeline {
+    position: relative;
+    padding-left: 40px;
+  }
+  .sk-timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .sk-tl-item {
+    position: relative;
+    margin-bottom: 48px;
+  }
+  .sk-tl-item::before {
+    content: '';
+    position: absolute;
+    left: -40px;
+    top: 6px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--accent);
+  }
+  .sk-tl-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .sk-tl-time {
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .sk-tl-cat {
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 40px;
+    padding: 2px 10px;
+  }
+  .sk-tl-item .wire {
+    aspect-ratio: 16 / 9;
+    margin-bottom: 16px;
+  }
+  .sk-tl-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .sk-tl-desc {
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: var(--ink-soft);
+  }
+
+  /* ============================================================
+     骨架 6：极简列表行（PLATEAU news 行）
+     ============================================================ */
+  .sk-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .sk-row:first-child { border-top: 1px solid var(--line); }
+  .sk-row .wire {
+    width: 90px;
+    height: 60px;
+    flex-shrink: 0;
+  }
+  .sk-row .r-date {
+    font-size: 11px;
+    letter-spacing: .1em;
+    color: var(--ink-faint);
+    width: 70px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .sk-row .r-title {
+    font-size: 13px;
+    color: var(--ink);
+    flex: 1;
+    line-height: 1.6;
+  }
+  .sk-row .r-cat {
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 40px;
+    padding: 2px 8px;
+    flex-shrink: 0;
+  }
+
+  /* ============================================================
+     小屏适配
+     ============================================================ */
+  @media (max-width: 640px) {
+    .wrap { padding: 0 18px 80px; }
+    .sk-events { grid-template-columns: 1fr; }
+    .sk-feature { flex-direction: column; }
+    .sk-feature-right { width: 100%; height: 180px; }
+    .sk-feature-right .wire { border-left: none; border-top: 1px solid var(--line-strong); }
+    .sk-hero-text { max-width: 80%; left: 20px; bottom: 20px; }
+    .sk-hero-text .t1 { font-size: 18px; }
+    .sk-row { flex-wrap: wrap; }
+    .sk-row .r-title { width: 100%; flex-basis: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ============ 文档头 ============ -->
+  <div class="doc-head">
+    <div class="eyebrow">WIREFRAME · 骨架结构</div>
+    <h1>PLATEAU 风格内容骨架</h1>
+    <p>
+      这不是视觉稿，是结构稿。灰色叉叉代表图片预留位，虚线框是注释。
+      每个区块展示一种内容卡片的"骨架"，你可以直接看到哪里放图、哪里放标题、哪里放标签、哪里放日期，然后往对应位置填内容。
+    </p>
+  </div>
+
+  <!-- ============================================================
+       骨架 1：事件列表（横向并排卡片）
+       ============================================================ -->
+  <div class="block">
+    <div class="block-title">
+      <span class="num">01</span>
+      <h2>事件列表 · 并排图位</h2>
+      <span class="line"></span>
+    </div>
+    <p class="block-note">
+      PLATEAU 的 Upcoming Events 格式：三列等宽，每个是一个 16:9 横图预留位，图片本身承载全部信息（如活动海报），下方通常不放文字或只放极简说明。
+    </p>
+
+    <div class="sk-events">
+      <div class="wire"><span class="wire-tag">IMG 16:9</span></div>
+      <div class="wire"><span class="wire-tag">IMG 16:9</span></div>
+      <div class="wire"><span class="wire-tag">IMG 16:9</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       骨架 2：内容卡片（journal / learning / usecase）
+       ============================================================ -->
+  <div class="block">
+    <div class="block-title">
+      <span class="num">02</span>
+      <h2>内容卡片 · 分类 + 横图 + 标题 + 标签 + 日期</h2>
+      <span class="line"></span>
+    </div>
+    <p class="block-note">
+      PLATEAU 的 Journal / Learning / Use Case 通用卡片结构。自上而下：分类色点与日期 → 通栏横图 → 标题 → 标签 → 底部城市或来源信息。
+    </p>
+
+    <div class="sk-card">
+      <div class="sk-card-top">
+        <span class="sk-cat"><span class="dot"></span>CATEGORY</span>
+        <span class="sk-date">2026.09.25</span>
+      </div>
+      <div class="wire"><span class="wire-tag">IMG 16:9 · 横图</span></div>
+      <div class="sk-title">标题文字：一到两行，说明这条内容是什么</div>
+      <div class="sk-tags">
+        <span>标签 A</span><span>标签 B</span><span>标签 C</span>
+      </div>
+      <div class="sk-card-bottom">
+        <span>城市 / 来源</span>
+        <span>Last updated : 2026.03.15</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       骨架 3：左右大区块（左文右图）
+       ============================================================ -->
+  <div class="block">
+    <div class="block-title">
+      <span class="num">03</span>
+      <h2>大区块卡 · 左文右图</h2>
+      <span class="line"></span>
+    </div>
+    <p class="block-note">
+      PLATEAU "others" 区块格式：左侧放标题、描述、按钮（垂直分布），右侧是方形或竖长图片位，整块可点击。
+    </p>
+
+    <div class="sk-feature">
+      <div class="sk-feature-left">
+        <div>
+          <h3>区块标题</h3>
+          <p>描述文字，两到三行，说明这个区块的内容是什么，引导用户点击进入。</p>
+        </div>
+        <span class="anno">→ 按钮 / 链接</span>
+      </div>
+      <div class="sk-feature-right">
+        <div class="wire"><span class="wire-tag">IMG 竖长</span></div>
+      </div>
+    </div>
+
+    <!-- 上文下图变体 -->
+    <div class="sk-feature-stack">
+      <div class="sk-feature-left">
+        <div>
+          <h3>通栏大图变体</h3>
+          <p>上方文字区，下方通栏 21:9 大图。适合视觉主图或场景照。</p>
+        </div>
+        <span class="anno">→ 按钮 / 链接</span>
+      </div>
+      <div class="sk-feature-right">
+        <div class="wire"><span class="wire-tag">IMG 21:9 通栏</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       骨架 4：首页 Hero
+       ============================================================ -->
+  <div class="block">
+    <div class="block-title">
+      <span class="num">04</span>
+      <h2>首页 Hero · 大图叠文字</h2>
+      <span class="line"></span>
+    </div>
+    <p class="block-note">
+      PLATEAU 首屏：全宽 21:9 大图（视频/图片）作为背景，文字叠在左下角，主标题 + 副文案 + 按钮。
+    </p>
+
+    <div class="sk-hero">
+      <div class="wire"><span class="wire-tag">IMG / VIDEO 21:9 全宽</span></div>
+      <div class="sk-hero-text">
+        <div class="t1">Map the New World.</div>
+        <div class="t2">副标题文字，说明这个项目的核心信息。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       骨架 5：左侧单列时间线（横图版）
+       ============================================================ -->
+  <div class="block">
+    <div class="block-title">
+      <span class="num">05</span>
+      <h2>左侧单列时间线 · 横图版</h2>
+      <span class="line"></span>
+    </div>
+    <p class="block-note">
+      你要的时间线结构：左侧竖轴 + 节点，每个条目是"时间 + 分类"一行 → 通栏横图 → 标题 → 描述。结构清晰，可无限向下延伸。
+    </p>
+
+    <div class="sk-timeline">
+      <div class="sk-tl-item">
+        <div class="sk-tl-head">
+          <span class="sk-tl-time">2021 — SPRING</span>
+          <span class="sk-tl-cat">CATEGORY</span>
+        </div>
+        <div class="wire"><span class="wire-tag">IMG 16:9</span></div>
+        <div class="sk-tl-title">标题文字</div>
+        <div class="sk-tl-desc">描述文字，一到两行，说明这个时间点发生了什么。</div>
+      </div>
+      <div class="sk-tl-item">
+        <div class="sk-tl-head">
+          <span class="sk-tl-time">2022 — SUMMER</span>
+          <span class="sk-tl-cat">CATEGORY</span>
+        </div>
+        <div class="wire"><span class="wire-tag">IMG 16:9</span></div>
+        <div class="sk-tl-title">标题文字</div>
+        <div class="sk-tl-desc">描述文字，一到两行。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       骨架 6：极简列表行
+       ============================================================ -->
+  <div class="block">
+    <div class="block-title">
+      <span class="num">06</span>
+      <h2>极简列表行 · 日期 + 小图 + 标题</h2>
+      <span class="line"></span>
+    </div>
+    <p class="block-note">
+      PLATEAU News 列表格式：一行一条，最左日期，然后小图预留位，再是标题和分类标签。适合信息密度高的新闻/更新列表。
+    </p>
+
+    <div class="sk-row">
+      <span class="r-date">2026.09.25</span>
+      <div class="wire"><span class="wire-tag">80×60</span></div>
+      <span class="r-title">标题文字，一行说明这条内容</span>
+      <span class="r-cat">CATEGORY</span>
+    </div>
+    <div class="sk-row">
+      <span class="r-date">2026.09.11</span>
+      <div class="wire"><span class="wire-tag">80×60</span></div>
+      <span class="r-title">标题文字，一行说明这条内容</span>
+      <span class="r-cat">CATEGORY</span>
+    </div>
+    <div class="sk-row">
+      <span class="r-date">2026.03.31</span>
+      <div class="wire"><span class="wire-tag">80×60</span></div>
+      <span class="r-title">标题文字，一行说明这条内容</span>
+      <span class="r-cat">CATEGORY</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
