@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空洞测绘 | 系统终端</title>
+<style>
+  /* =========================================
+     全局变量 (全站暗黑扁平统一样式)
+     ========================================= */
+  :root {
+    --bg: #0a0b0e;          
+    --surface: #121418;     
+    --ink: #e8e8e8;         
+    --ink-soft: #666666;    
+    --line: #22252a;        
+    --highlight: #ffffff;   
+    
+    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, Menlo, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* =========================================
+     页面路由系统
+     ========================================= */
+  .page-view { display: none; opacity: 0; transition: opacity 0.4s ease; flex: 1; }
+  .page-view.active { display: block; opacity: 1; }
+
+  /* =========================================
+     页面 1：主菜单 (三个分类)
+     ========================================= */
+  #view-page1 {
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at 50% 0%, rgba(40, 45, 55, 0.3) 0%, transparent 70%);
+    position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #view-page1.active { display: flex; }
+
+  .hk-container {
+    width: 100%; max-width: 680px;
+    display: flex; flex-direction: column; align-items: center;
+    transform: translateY(-5vh);
+  }
+
+  .hk-title-wrapper { text-align: center; margin-bottom: 6vh; }
+  .hk-title {
+    font-family: var(--font-main);
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--highlight);
+    margin-bottom: 16px;
+    margin-left: 0.4em;
+  }
+  
+  .hk-divider { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .hk-divider::before, .hk-divider::after {
+    content: ''; width: 80px; height: 1px; 
+    background: linear-gradient(to right, transparent, var(--line), transparent);
+  }
+  .hk-divider span { font-size: 12px; color: var(--ink-soft); }
+
+  .hk-menu-list { width: 100%; display: flex; flex-direction: column; gap: 0; }
+  
+  .hk-menu-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 20px;
+    cursor: pointer;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid var(--line);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .hk-num {
+    font-family: var(--font-mono);
+    font-size: 14px; color: var(--ink-soft);
+    width: 40px;
+  }
+
+  .hk-text-box {
+    flex: 1;
+    font-size: 18px; font-weight: 400;
+    letter-spacing: 0.2em;
+    color: var(--ink-soft);
+    transition: all 0.3s ease;
+  }
+
+  .hk-icon {
+    font-family: var(--font-mono);
+    font-size: 14px; color: transparent;
+    transition: all 0.3s ease;
+    transform: translateX(-10px);
+  }
+
+  .hk-menu-item:hover { background: var(--surface); }
+  .hk-menu-item:hover .hk-text-box { color: var(--highlight); padding-left: 10px; }
+  .hk-menu-item:hover .hk-icon { color: var(--highlight); transform: translateX(0); }
+
+
+  /* =========================================
+     二级页面：极致扁平整齐
+     ========================================= */
+  .main-container { 
+    max-width: 1000px; margin: 0 auto; padding: 80px 24px 120px; position: relative; 
+  }
+  
+  .back-btn {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 8px 0;
+    margin-bottom: 60px;
+    transition: color 0.3s;
+  }
+  .back-btn:hover { color: var(--highlight); }
+  .back-btn::before { content: '← '; }
+
+  .page-title { 
+    font-size: 20px; font-weight: 400; letter-spacing: 0.2em; color: var(--highlight); 
+    margin-bottom: 64px; padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  
+  .category-section {
+    margin-bottom: 80px; 
+  }
+  
+  .category-title {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 32px;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .category-title::before {
+    content: ''; display: block; width: 4px; height: 14px; background: var(--highlight);
+  }
+
+  /* 极度扁平的网格 (固定 4 列) */
+  .image-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px; 
+  }
+  
+  .image-card { display: flex; flex-direction: column; cursor: pointer; }
+  
+  .image-wrapper { 
+    background: #15171a; 
+    border: 1px solid var(--line);
+    overflow: hidden; aspect-ratio: 4/5; 
+  }
+  
+  .image-wrapper img { 
+    width: 100%; height: 100%; object-fit: cover; 
+    opacity: 0.85; transition: all 0.4s ease; 
+  }
+  
+  .image-card:hover .image-wrapper img { 
+    opacity: 1; transform: scale(1.02); 
+  }
+  
+  .image-info { 
+    margin-top: 16px; display: flex; justify-content: space-between; 
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.05em; border-bottom: 1px solid var(--line); padding-bottom: 12px;
+  }
+  .image-card:hover .image-info span:first-child { color: var(--highlight); }
+
+  /* 页面三 (对齐指令 / 调整) */
+  .instruction-list { display: flex; flex-direction: column; gap: 0; }
+  .instruction-item {
+    display: flex; gap: 32px; align-items: center; cursor: pointer; 
+    border-bottom: 1px solid var(--line);
+    padding: 24px 0; transition: background 0.3s;
+  }
+  .instruction-item:hover { background: var(--surface); }
+  
+  .instruction-img { 
+    width: 80px; height: 100px; 
+    overflow: hidden; flex-shrink: 0; background: #15171a; 
+  }
+  
+  .instruction-img img { 
+    width: 100%; height: 100%; object-fit: cover; opacity: 0.7; 
+    transition: opacity 0.3s; 
+  }
+  .instruction-item:hover .instruction-img img { opacity: 1; }
+
+  .instruction-text { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .instruction-title { 
+    font-size: 15px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0.1em; transition: color 0.3s;
+  }
+  .instruction-item:hover .instruction-title { color: var(--highlight); }
+  .instruction-desc { 
+    font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); letter-spacing: 0.02em;
+  }
+  
+  .instruction-arrow {
+    font-family: var(--font-mono); font-size: 16px; color: transparent;
+    transition: color 0.3s, transform 0.3s;
+  }
+  .instruction-item:hover .instruction-arrow { color: var(--highlight); transform: translateX(5px); }
+
+  /* 响应式调整 */
+  @media (max-width: 900px) {
+    .image-grid { grid-template-columns: repeat(2, 1fr); } 
+  }
+  @media (max-width: 600px) {
+    .instruction-item { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .instruction-img { width: 100%; height: 200px; }
+    .instruction-arrow { display: none; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= 页面 1：主菜单 (三个分类) ================= -->
+  <div id="view-page1" class="page-view active">
+    <div class="hk-container">
+      <div class="hk-title-wrapper">
+        <div class="hk-title">System Archive</div>
+        <div class="hk-divider"><span>❦</span></div>
+      </div>
+      <div class="hk-menu-list">
+        
+        <!-- 分类 1：SS -->
+        <div class="hk-menu-item" onclick="switchPage('page2', 'grid-color')">
+          <div class="hk-num">01</div>
+          <div class="hk-text-box">SS</div>
+          <div class="hk-icon">→</div>
+        </div>
+
+        <!-- 分类 2：FW -->
+        <div class="hk-menu-item" onclick="switchPage('page2', 'grid-style')">
+          <div class="hk-num">02</div>
+          <div class="hk-text-box">FW</div>
+          <div class="hk-icon">→</div>
+        </div>
+
+        <!-- 分类 3：调整 (跳转到原来的对齐/修正指令页) -->
+        <div class="hk-menu-item" onclick="switchPage('page3')">
+          <div class="hk-num">03</div>
+          <div class="hk-text-box">调整</div>
+          <div class="hk-icon">→</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 页面 2：正构 (分为两类) ================= -->
+  <div id="view-page2" class="page-view">
+    <main class="main-container">
+      <div class="back-btn" onclick="switchPage('page1')">RETURN TO MENU</div>
+      
+      <div class="page-title">正构 / ORTHOSTRUCTURE</div>
+      
+      <!-- 类 1：色系分组 (对应 SS) -->
+      <div class="category-section" id="section-color">
+        <div class="category-title">CATEGORY 01 / 色系分组 (SS)</div>
+        <div class="image-grid" id="grid-color">
+          <!-- JS 动态插入 4 张图片 -->
+        </div>
+      </div>
+
+      <!-- 类 2：风格分组 (对应 FW) -->
+      <div class="category-section" id="section-style">
+        <div class="category-title">CATEGORY 02 / 风格分组 (FW)</div>
+        <div class="image-grid" id="grid-style">
+          <!-- JS 动态插入 4 张图片 -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================= 页面 3：调整 / 指令 ================= -->
+  <div id="view-page3" class="page-view">
+    <main class="main-container">
+      <div class="back-btn" onclick="switchPage('page1')">RETURN TO MENU</div>
+      
+      <div class="page-title">精准囚徒 / EXECUTION</div>
+
+      <div class="instruction-list">
+        <!-- 选项 1 -->
+        <div class="instruction-item" onclick="alert('执行：调试跳转')">
+          <div class="instruction-img"><img src="./images/casablanca/01.JPG" alt="随机图片" onerror="this.style.display='none'"></div>
+          <div class="instruction-text">
+            <div class="instruction-title">调试 / DEBUG</div>
+            <div class="instruction-desc">查看系统日志与参数设定，进行环境调试。</div>
+          </div>
+          <div class="instruction-arrow">→</div>
+        </div>
+
+        <!-- 选项 2 -->
+        <div class="instruction-item" onclick="alert('执行：仅上装跳转')">
+          <div class="instruction-img"><img src="./images/matieres-fecales/01.JPG" alt="随机图片" onerror="this.style.display='none'"></div>
+          <div class="instruction-text">
+            <div class="instruction-title">仅上装 / TOP ONLY</div>
+            <div class="instruction-desc">保留上装进行重新抽样，排查下装干扰因素。</div>
+          </div>
+          <div class="instruction-arrow">→</div>
+        </div>
+
+        <!-- 选项 3 -->
+        <div class="instruction-item" onclick="alert('执行：仅下装跳转')">
+          <div class="instruction-img"><img src="./images/casablanca/02.png" alt="随机图片" onerror="this.style.display='none'"></div>
+          <div class="instruction-text">
+            <div class="instruction-title">仅下装 / BOTTOM ONLY</div>
+            <div class="instruction-desc">保留上装进行重新抽样，排查上装干扰因素。</div>
+          </div>
+          <div class="instruction-arrow">→</div>
+        </div>
+
+        <!-- 选项 4 -->
+        <div class="instruction-item" onclick="alert('执行：仅外套跳转')">
+          <div class="instruction-img"><img src="./images/casablanca/01.JPG" alt="随机图片" onerror="this.style.display='none'"></div>
+          <div class="instruction-text">
+            <div class="instruction-title">仅外套 / OUTER ONLY</div>
+            <div class="instruction-desc">忽略内搭，单独评估外套版型与质感。</div>
+          </div>
+          <div class="instruction-arrow">→</div>
+        </div>
+
+        <!-- 选项 5 -->
+        <div class="instruction-item" onclick="alert('执行：替换跳转')">
+          <div class="instruction-img"><img src="./images/matieres-fecales/01.JPG" alt="随机图片" onerror="this.style.display='none'"></div>
+          <div class="instruction-text">
+            <div class="instruction-title">替换 / OVERWRITE</div>
+            <div class="instruction-desc">完全替换当前样本，导入新的视觉数据重新判断。</div>
+          </div>
+          <div class="instruction-arrow">→</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // 页面切换逻辑 (新增了 scrollToId 参数，方便直接定位到某个分类)
+    function switchPage(pageName, scrollToId = null) {
+      // 1. 隐藏所有页面
+      document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
+      
+      // 2. 显示目标页面
+      const targetPage = document.getElementById('view-' + pageName);
+      targetPage.classList.add('active');
+      
+      // 3. 处理滚动定位
+      if (scrollToId) {
+        // 如果传入了要滚动到的 ID (比如从首页点 FW，直接滚到风格分组)
+        setTimeout(() => {
+          const targetSection = document.getElementById(scrollToId);
+          if (targetSection) {
+            // 减去一点顶部内边距，看起来更舒服
+            const yOffset = -80; 
+            const y = targetSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({top: y, behavior: 'smooth'});
+          }
+        }, 100); // 延迟一点点，等页面 display 变成 block 后再滚动
+      } else {
+        // 如果没有指定，直接回到顶部
+        window.scrollTo(0, 0); 
+      }
+    }
+
+    // 数据源
+    const confirmedData = [
+      { folder: 'etro', name: 'etro', file: '01.JPG' },
+      { folder: 'demobaza', name: 'demobaza', file: '01.webp' },
+      { folder: 'heos', name: 'heos', file: '01.png' },
+      { folder: 'parsons-bfa', name: 'parsons bfa', file: '01.JPG' },
+      { folder: 'hermes', name: 'Hermès', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '02.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '03.JPG' }
+    ];
+
+    // 渲染函数
+    function renderGrid(containerId, dataSlice, startIndex) {
+      const grid = document.getElementById(containerId);
+      grid.innerHTML = dataSlice.map((item, index) => {
+        const globalIndex = startIndex + index + 1;
+        const indexNum = globalIndex.toString().padStart(2, '0');
+        return `
+          <div class="image-card">
+            <div class="image-wrapper">
+              <img src="./images/${item.folder}/${item.file}" alt="${item.name}" onerror="this.style.opacity='0';">
+            </div>
+            <div class="image-info">
+              <span>${item.name.toUpperCase()}</span>
+              <span>IDX.${indexNum}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 初始化渲染
+    document.addEventListener('DOMContentLoaded', () => {
+      renderGrid('grid-color', confirmedData.slice(0, 4), 0);
+      renderGrid('grid-style', confirmedData.slice(4, 8), 4);
+    });
+  </script>
+</body>
+</html>
