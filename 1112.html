@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MUSEUM DEPARTMENT</title>
+<style>
+  :root {
+    --bg-body: #FFFFFF; 
+    --text-main: #000000;
+    --text-muted: #8E8E93;
+    
+    /* 苹果深色胶囊样式变量 */
+    --bg-glass: rgba(30, 30, 30, 0.85); 
+    --accent: #0A84FF; 
+    
+    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: var(--font-main);
+    background: var(--bg-body);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; 
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+  /* =========================================
+     顶部悬浮导航 (完全透明，覆盖在图片上)
+     ========================================= */
+  .top-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 80px;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    z-index: 100;
+    background: transparent; 
+    pointer-events: none; 
+  }
+
+  .nav-left {
+    pointer-events: auto;
+    display: flex;
+    align-items: center; 
+    gap: 30px; 
+  }
+
+  .page-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #000;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    user-select: none;
+  }
+  .page-title:hover { opacity: 0.6; }
+
+  /* 中间：苹果胶囊切换器 */
+  .nav-center {
+    pointer-events: auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    background: var(--bg-glass);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 999px;
+    padding: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+    max-width: 60vw;
+    overflow-x: auto;
+    scrollbar-width: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .nav-center::-webkit-scrollbar { display: none; }
+
+  .segment-btn {
+    background: transparent;
+    border: none;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .segment-btn.active {
+    background: var(--accent);
+    color: #FFF;
+  }
+
+  /* 右侧 */
+  .nav-right {
+    pointer-events: auto;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .icon-btn {
+    background: transparent;
+    border: none;
+    color: #000;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.2s;
+  }
+  .icon-btn:hover { opacity: 0.6; }
+  .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+
+  /* =========================================
+     主画廊区域
+     ========================================= */
+  .gallery-scroll {
+    padding: 80px 40px 100px 40px; 
+  }
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 40px 30px; 
+  }
+  .gallery-item {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+  }
+  .gallery-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: opacity 0.3s ease;
+    background: #f0f0f0; 
+  }
+  .gallery-item:hover img { opacity: 0.85; }
+
+  .item-info { margin-top: 16px; }
+  .item-name {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .item-sub { font-size: 13px; color: var(--text-muted); }
+
+  /* =========================================
+     优化后的 VOGUE 风格全屏大图查看器
+     ========================================= */
+  .lightbox {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; 
+    z-index: 1000; display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  }
+  .lightbox.active { opacity: 1; pointer-events: auto; }
+
+  /* 顶部深色导航 */
+  .lb-top-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 80px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; z-index: 10; background: #000;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .lb-logo {
+    color: white; font-weight: bold; font-size: 18px; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; user-select: none; transition: opacity 0.2s;
+  }
+  .lb-logo:hover { opacity: 0.7; }
+  .lb-nav-center { display: flex; gap: 40px; color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .lb-nav-center span { cursor: pointer; transition: opacity 0.2s; }
+  .lb-nav-center span:hover { opacity: 0.7; }
+  .lb-nav-right { display: flex; gap: 24px; color: #fff; align-items: center; font-size: 13px; text-transform: uppercase; }
+
+  /* 关闭按钮（明确 ✕ + 文字） */
+  .lb-close-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: transparent; border: 1px solid rgba(255,255,255,0.3);
+    color: #fff; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .lb-close-btn:hover { background: rgba(255,255,255,0.12); border-color: #fff; }
+  .lb-close-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+
+  /* 中间主图区域：绝对定位撑满剩余空间 */
+  .lb-main-area {
+    position: absolute;
+    top: 80px;    
+    bottom: 160px; 
+    left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 40px;
+  }
+
+  /* 左侧文本信息 */
+  .lb-info {
+    position: absolute; left: 10%; top: 50%; transform: translateY(-50%);
+    color: #fff; max-width: 300px;
+    z-index: 2;
+  }
+  .lb-info h1 { font-size: 36px; font-weight: 400; line-height: 1.1; margin-bottom: 12px; letter-spacing: -1px; text-transform: uppercase; }
+  .lb-info h2 { font-size: 14px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; color: #ccc; }
+  .lb-info .look-num { display: flex; align-items: center; gap: 15px; font-size: 14px; color: #fff; }
+  .lb-info .look-num svg { width: 16px; height: 16px; stroke: currentColor; fill: none; cursor: pointer; transition: opacity 0.2s; }
+  .lb-info .look-num svg:hover { opacity: 0.6; }
+
+  /* 图片容器 */
+  .lb-img-container {
+    width: 100%; height: 100%; 
+    display: flex; align-items: center; justify-content: center;
+    padding-left: 15%; 
+  }
+  .lb-img-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* 底部胶片栏 */
+  .lb-bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 160px;
+    background: #000; padding: 20px 40px;
+    display: flex; flex-direction: column;
+    border-top: 1px solid rgba(255,255,255,0.1); z-index: 10;
+  }
+
+  .lb-bottom-header {
+    display: flex; justify-content: space-between; align-items: center; color: #fff; margin-bottom: 15px;
+  }
+  .lb-hide-btn { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .lb-hide-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+  .lb-arrows { display: flex; gap: 20px; }
+  .lb-arrows svg { width: 20px; height: 20px; stroke: currentColor; fill: none; cursor: pointer; }
+
+  /* 胶片滚动容器 */
+  .lb-filmstrip {
+    display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; height: 100px;
+    scroll-behavior: smooth;
+  }
+  .lb-filmstrip::-webkit-scrollbar { display: none; }
+  
+  .lb-thumb {
+    height: 100%; width: auto; aspect-ratio: 3/4;
+    object-fit: cover; cursor: pointer; opacity: 0.5; transition: opacity 0.2s, border 0.2s;
+    border: 2px solid transparent;
+  }
+  .lb-thumb:hover { opacity: 0.8; }
+  .lb-thumb.active { opacity: 1; border: 2px solid #fff; }
+
+  /* =========================================
+     移动端适配
+     ========================================= */
+  @media (max-width: 1024px) {
+    .lb-info { left: 40px; }
+    .lb-img-container { padding-left: 20%; }
+  }
+
+  @media (max-width: 768px) {
+    /* 不再隐藏分类胶囊，改为可横向滚动 */
+    .nav-center {
+      display: flex;
+      max-width: 46vw;
+      padding: 3px;
+    }
+    .segment-btn { padding: 5px 12px; font-size: 12px; }
+
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 15px; }
+    .gallery-scroll { padding: 80px 20px 60px 20px; }
+    .top-nav { padding: 0 16px; }
+    .page-title { font-size: 12px; letter-spacing: 1px; }
+    .nav-right { gap: 14px; }
+    
+    .lb-main-area { 
+      top: 60px; bottom: 120px; 
+      flex-direction: column; justify-content: flex-start; 
+      padding: 20px; 
+    }
+    .lb-info { 
+      position: relative; top: 0; transform: none; left: 0; 
+      width: 100%; margin-bottom: 20px; text-align: center; 
+    }
+    .lb-info h1 { font-size: 28px; }
+    .lb-info h2 { margin-bottom: 15px; }
+    .lb-img-container { padding-left: 0; }
+    .lb-bottom-bar { height: 120px; padding: 10px 20px; }
+    .lb-thumb { height: 80px; }
+    .lb-top-bar { padding: 0 16px; height: 60px; }
+    .lb-logo { font-size: 13px; letter-spacing: 1px; }
+    .lb-nav-center { display: none; }
+    .lb-close-btn { padding: 6px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 顶部悬浮导航 (完全透明) -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <!-- 点击品牌名 = 返回主页（关闭查看器 + 重置为全部画廊 + 回到顶部） -->
+      <a href="javascript:void(0)" class="page-title" id="nav-brand" onclick="goHome()">MUSEUM DEPARTMENT</a>
+    </div>
+
+    <div class="nav-center" id="nav-center">
+      <button class="segment-btn active" onclick="switchCategory(this, allImages)">全部画廊</button>
+      <button class="segment-btn" onclick="switchCategory(this, allImages.slice(0, 4))">修正指令</button>
+      <button class="segment-btn" onclick="switchCategory(this, allImages.slice(0, 2))">关于系统</button>
+      <button class="segment-btn" onclick="switchCategory(this, allImages.slice(4, 8))">上装</button>
+    </div>
+
+    <div class="nav-right">
+      <button class="icon-btn">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+      </button>
+      <button class="icon-btn">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      </button>
+      <button class="icon-btn">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主画廊区域 -->
+  <main class="gallery-scroll">
+    <div class="gallery-grid" id="gallery-grid">
+      <!-- JS 动态渲染图片 -->
+    </div>
+  </main>
+
+  <!-- 全屏大图查看器 -->
+  <div class="lightbox" id="lightbox">
+    <!-- 顶部导航 -->
+    <div class="lb-top-bar">
+      <!-- 点击 Logo 也返回主页 -->
+      <div class="lb-logo" onclick="goHome()">MUSEUM DEPARTMENT</div>
+      <div class="lb-nav-center">
+        <span onclick="goHome()" style="border-bottom: 1px solid #fff; padding-bottom: 4px;">GALLERY</span>
+        <span onclick="goHome()">COLLECTION</span>
+      </div>
+      <div class="lb-nav-right">
+        <span>Sign In</span>
+        <!-- 明确的关闭按钮：✕ CLOSE -->
+        <button class="lb-close-btn" onclick="closeLightbox()" title="返回画廊">
+          <svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          CLOSE
+        </button>
+      </div>
+    </div>
+
+    <!-- 中间主图 + 左侧信息 -->
+    <div class="lb-main-area">
+      <div class="lb-info">
+        <h1 id="lb-title">MUSEUM</h1>
+        <h2 id="lb-subtitle">DEPARTMENT</h2>
+        <div class="lb-info-actions">
+          <div class="look-num">
+            <svg viewBox="0 0 24 24" onclick="prevImage()" style="cursor:pointer;"><path d="M15 18l-6-6 6-6"/></svg>
+            <span id="lb-counter">Look 1 / 1</span>
+            <svg viewBox="0 0 24 24" onclick="nextImage()" style="cursor:pointer;"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+      </div>
+      
+      <div class="lb-img-container">
+        <img id="lightbox-img" src="" alt="">
+      </div>
+    </div>
+
+    <!-- 底部胶片栏 -->
+    <div class="lb-bottom-bar">
+      <div class="lb-bottom-header">
+        <div class="lb-hide-btn" onclick="closeLightbox()">
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          HIDE COLLECTION
+        </div>
+        <div class="lb-arrows">
+          <svg viewBox="0 0 24 24" onclick="prevImage()" style="cursor:pointer;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <svg viewBox="0 0 24 24" onclick="nextImage()" style="cursor:pointer;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+      <div class="lb-filmstrip" id="lb-filmstrip">
+        <!-- JS 动态渲染底部缩略图 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 【真实数据】
+    const confirmedData = [
+      { folder: 'etro', name: 'etro', file: '01.JPG' },
+      { folder: 'demobaza', name: 'demobaza', file: '01.webp' },
+      { folder: 'heos', name: 'heos', file: '01.png' },
+      { folder: 'parsons-bfa', name: 'parsons bfa', file: '01.JPG' },
+      { folder: 'hermes', name: 'Hermès', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '01.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '02.JPG' },
+      { folder: 'saint-laurent', name: 'saint laurent', file: '03.JPG' }
+    ];
+
+    // 为了铺满屏幕复制多份
+    const allImages = [...confirmedData, ...confirmedData];
+
+    const grid = document.getElementById('gallery-grid');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    
+    // 全屏预览中的文字元素
+    const lbTitle = document.getElementById('lb-title');
+    const lbSubtitle = document.getElementById('lb-subtitle');
+    const lbCounter = document.getElementById('lb-counter');
+    const lbFilmstrip = document.getElementById('lb-filmstrip');
+
+    let currentIndex = 0;
+    let currentGalleryData = [];
+
+    // 1. 渲染网格画廊
+    function renderGallery(images) {
+      grid.innerHTML = '';
+      currentGalleryData = images; 
+
+      images.forEach((item, index) => {
+        const el = document.createElement('div');
+        el.className = 'gallery-item';
+        
+        const imgSrc = `./images/${item.folder}/${item.file}`;
+        
+        el.innerHTML = `
+          <img src="${imgSrc}" loading="lazy" alt="${item.name}">
+          <div class="item-info">
+            <div class="item-name">${item.name.toUpperCase()}</div>
+            <div class="item-sub">IDX.${(index + 1).toString().padStart(2, '0')}</div>
+          </div>
+        `;
+        
+        el.addEventListener('click', () => {
+          openLightbox(index);
+        });
+        
+        grid.appendChild(el);
+      });
+    }
+
+    // 2. 打开全屏查看器
+    function openLightbox(index) {
+      currentIndex = index;
+      lightbox.classList.add('active');
+      document.body.style.overflow = 'hidden'; // 防止背景滚动
+      updateLightboxContent();
+    }
+
+    // 3. 更新大图和底部缩略图状态，以及左侧文字
+    function updateLightboxContent() {
+      const item = currentGalleryData[currentIndex];
+      const imgSrc = `./images/${item.folder}/${item.file}`;
+      
+      lightboxImg.src = imgSrc;
+      
+      lbTitle.textContent = item.name;
+      lbSubtitle.textContent = 'SYSTEM ARCHIVE';
+      lbCounter.textContent = `Look ${currentIndex + 1} / ${currentGalleryData.length}`;
+
+      // 渲染底部缩略图
+      lbFilmstrip.innerHTML = '';
+      currentGalleryData.forEach((thumbItem, i) => {
+        const thumbSrc = `./images/${thumbItem.folder}/${thumbItem.file}`;
+        const img = document.createElement('img');
+        img.src = thumbSrc;
+        img.className = `lb-thumb ${i === currentIndex ? 'active' : ''}`;
+        
+        img.addEventListener('click', () => {
+          currentIndex = i;
+          updateLightboxContent();
+        });
+        
+        lbFilmstrip.appendChild(img);
+      });
+
+      // 自动将当前选中的缩略图滚动到可视区域
+      const activeThumb = lbFilmstrip.querySelector('.lb-thumb.active');
+      if (activeThumb) {
+        activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+
+    // 4. 切换上一张/下一张
+    function prevImage() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateLightboxContent();
+      }
+    }
+
+    function nextImage() {
+      if (currentIndex < currentGalleryData.length - 1) {
+        currentIndex++;
+        updateLightboxContent();
+      }
+    }
+
+    // 5. 分类切换
+    function switchCategory(btn, imagesData) {
+      document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGallery(imagesData);
+      closeLightbox(); // 若在查看器中切换分类，先关闭查看器
+    }
+
+    // 6. 关闭全屏查看器（返回画廊）
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // 7. 返回主页：关闭查看器 + 重置为「全部画廊」+ 回到顶部
+    function goHome() {
+      closeLightbox();
+      const allBtn = document.querySelector('.segment-btn'); // 第一个就是“全部画廊”
+      if (allBtn) {
+        switchCategory(allBtn, allImages);
+      } else {
+        renderGallery(allImages);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'ArrowRight') nextImage();
+    });
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      renderGallery(allImages);
+    });
+  </script>
+</body>
+</html>
