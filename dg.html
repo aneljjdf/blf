@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MUSEUM DEPARTMENT</title>
+  <style>
+    :root {
+      --bg-body: #FFFFFF;
+      --text-main: #000000;
+      --text-muted: #888888;
+      --bg-glass: rgba(245, 245, 245, 0.85); 
+      --accent-blue: #0A84FF;
+      --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    html, body {
+      font-family: var(--font-main);
+      background: var(--bg-body);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      height: 100%;
+    }
+
+    /* ========= 中央文字展示 ========= */
+    .center-display {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.4s ease;
+    }
+
+    .center-display.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .hero-text {
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-text::before {
+      content: '';
+      display: block;
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-blue);
+      border-radius: 50%;
+    }
+
+    /* ========= 大图预览 ========= */
+    .lightbox {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-body);
+      z-index: 1000; display: flex; flex-direction: column;
+      display: none;
+      opacity: 0; 
+    }
+    
+    .lightbox.active { 
+      display: flex;
+      opacity: 1; 
+    }
+
+    .lb-main-area {
+      position: absolute;
+      top: 0; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 40px 140px 40px;
+      pointer-events: none;
+    }
+
+    /* 🟢 新增：左侧垂直缩略图栏 */
+    .lb-sidebar {
+      position: absolute;
+      left: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 60px;
+      max-height: 65vh;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      pointer-events: auto;
+      z-index: 20;
+      padding: 10px 0;
+    }
+    
+    .lb-sidebar::-webkit-scrollbar { display: none; }
+
+    .lb-thumb {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      cursor: pointer;
+      opacity: 0.4;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      background: #F5F5F5;
+    }
+
+    .lb-thumb:hover { opacity: 0.8; }
+
+    .lb-thumb.active {
+      opacity: 1;
+      border: 2px solid #000; /* 选中态加黑框，适配白底 */
+    }
+
+    /* 🟢 缩略图控制箭头 */
+    .lb-sidebar-controls {
+      position: absolute;
+      left: 40px;
+      bottom: 150px;
+      width: 60px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: auto;
+      z-index: 20;
+    }
+
+    .lb-sb-btn {
+      background: transparent; border: none; color: #000;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
+    }
+    .lb-sb-btn:hover { opacity: 1; }
+    .lb-sb-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    .lb-img-container {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding-left: 80px; /* 给左侧缩略图留出空间 */
+    }
+    
+    .lb-img-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ========= 统一底部悬浮栏 ========= */
+    .shared-bottom-bar {
+      position: fixed;
+      bottom: 30px; left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 1100;
+      pointer-events: none; 
+    }
+
+    .bottom-pill {
+      pointer-events: auto; 
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 24px;
+      padding: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      transition: background 0.4s ease;
+      cursor: pointer; 
+      width: 480px; 
+      max-width: 92vw;
+    }
+
+    .pill-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 4px 16px 4px 16px;
+      width: 100%;
+    }
+
+    .bar-title {
+      color: #000;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1; 
+      max-width: 150px; 
+      transition: color 0.3s;
+    }
+
+    .bar-content {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end; 
+      gap: 8px;
+      flex-shrink: 0; 
+      flex: 1;
+    }
+
+    .home-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .segment-btn {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    
+    .segment-btn:hover { color: #000; }
+    
+    .segment-btn.active {
+      color: #000;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .sub-nav-container {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden; 
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid transparent;
+    }
+    
+    .sub-nav-container.expanded {
+      max-height: 60px;
+      opacity: 1;
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .sub-nav-list {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sub-btn {
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .sub-btn:hover { color: #000; }
+    
+    .sub-btn.active {
+      color: #000;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .lightbox-nav {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0; 
+    }
+    
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .arrow-btn {
+      background: transparent; border: none; color: #000; 
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: opacity 0.2s;
+      opacity: 0.5;
+    }
+    
+    .arrow-btn:hover { opacity: 1; }
+    .arrow-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    
+    .counter {
+      color: #000; font-size: 12px; font-weight: 500;
+      letter-spacing: 1px;
+      min-width: 50px; text-align: center;
+      opacity: 0.8;
+      white-space: nowrap;
+    }
+    
+    .close-btn {
+      background: transparent; border: none;
+      color: #000; font-size: 12px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: opacity 0.2s;
+      padding: 8px 12px;
+      opacity: 0.6;
+      white-space: nowrap;
+    }
+    
+    .close-btn:hover { opacity: 1; }
+
+    /* ★ 状态控制 ★ */
+    body.on-home .home-nav { display: none; }
+    body.on-home .sub-nav-container { display: none; }
+    body.on-home .bar-content { justify-content: flex-end; }
+    body.on-home .bottom-pill { cursor: default; }
+    body.on-home .bar-title { cursor: default; }
+
+    /* 大图模式 */
+    body.lightbox-open .home-nav { display: none; }
+    body.lightbox-open .lightbox-nav { display: flex; }
+    body.lightbox-open .sub-nav-container { display: none; }
+    body.lightbox-open .bottom-pill {
+      background: var(--bg-glass);
+      border: 1px solid rgba(0,0,0,0.05);
+      cursor: default;
+    }
+    
+    @media (max-width: 768px) {
+      /* 手机端隐藏左侧缩略图以保证大图视野 */
+      .lb-sidebar, .lb-sidebar-controls { display: none; }
+      .lb-img-container { padding-left: 0; }
+
+      .bottom-pill { width: 100%; max-width: 95vw; border-radius: 20px; }
+      .pill-main-row { gap: 10px; padding: 4px 8px; }
+      
+      .bar-title { font-size: 11px; letter-spacing: 1px; max-width: 90px; }
+      .segment-btn { padding: 6px 10px; font-size: 11px; }
+      .lb-main-area { padding: 20px 20px 120px 20px; }
+      
+      .lightbox-nav { gap: 6px; }
+      .nav-group { gap: 0px; }
+      .counter { min-width: 40px; font-size: 11px; }
+      .close-btn { font-size: 11px; padding: 6px 8px; }
+      .arrow-btn { width: 24px; height: 24px; }
+      
+      .sub-nav-container.expanded { max-height: 80px; }
+      .sub-nav-list { flex-wrap: wrap; justify-content: center; }
+      .sub-btn { padding: 6px 10px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body class="on-home">
+
+  <div class="center-display" id="centerDisplay">
+    <div class="hero-text">SYSTEM ARCHIVE / SINCE 2023</div>
+  </div>
+
+  <!-- 大图查看器 -->
+  <div class="lightbox" id="lightbox">
+    
+    <!-- 🟢 左侧缩略图区域 -->
+    <div class="lb-sidebar" id="lbSidebar">
+      <!-- 缩略图由 JS 动态生成 -->
+    </div>
+    
+    <!-- 🟢 缩略图控制按钮 -->
+    <div class="lb-sidebar-controls">
+      <button class="lb-sb-btn" onclick="scrollSidebar(-1)">
+        <svg viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+      </button>
+      <button class="lb-sb-btn" onclick="scrollSidebar(1)">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="lb-main-area">
+      <div class="lb-img-container">
+        <img id="lightbox-img" src="" alt="">
+      </div>
+    </div>
+  </div>
+
+  <!-- 统一底部悬浮栏 -->
+  <div class="shared-bottom-bar">
+    <div class="bottom-pill" id="bottomPill">
+      <div class="pill-main-row">
+        <div class="bar-title" id="bar-title">SINCE 2023</div>
+        
+        <div class="bar-content">
+          <div class="home-nav">
+            <button class="segment-btn active" data-cat="confirm" onclick="handleMainClick(event, this, 'confirm')">确认成立</button>
+            <button class="segment-btn" data-cat="fix" onclick="handleMainClick(event, this, 'fix')">修正指令</button>
+          </div>
+          <div class="lightbox-nav">
+            <div class="nav-group">
+              <button class="arrow-btn" onclick="prevImage()">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div class="counter" id="lb-counter">01 / 01</div>
+              <button class="arrow-btn" onclick="nextImage()">
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <button class="close-btn" onclick="closeLightbox()">CLOSE</button>
+          </div>
+        </div>
+      </div>
+      <div class="sub-nav-container" id="subNavContainer">
+        <div class="sub-nav-list" id="subNavList"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ========= 📂 数据源 ========= */
+  const rawData = [
+    { folder: 'avavav',                   files: ['01.webp'] },
+    { folder: 'bed-j-w-ford',             files: ['01.webp'] },
+    { folder: 'botter',                   files: ['01.webp'] },
+    { folder: 'burc-akyol',               files: ['01.webp'] },
+    { folder: 'casablanca',               files: ['01.webp'] },
+    { folder: 'charles-jeffrey-loverboy', files: ['01.webp', '02.webp'] },
+    { folder: 'danielle-frankel',         files: ['01.webp'] }
+  ];
+
+  let flatGalleryList = [];
+  function buildGalleryList() {
+    flatGalleryList = [];
+    rawData.forEach(item => {
+      const displayName = item.folder.replace(/-/g, ' ').toUpperCase();
+      item.files.forEach((file, idx) => {
+        flatGalleryList.push({
+          brand: displayName,
+          folder: item.folder,
+          file: file,
+          isFirstOfBrand: (idx === 0)
+        });
+      });
+    });
+  }
+  buildGalleryList();
+
+  const CATEGORY_DATA = {
+    confirmSS: flatGalleryList, 
+    confirmFW: [...flatGalleryList].reverse(),
+    adjust:  flatGalleryList.slice(0, 4),
+    coat:    flatGalleryList.slice(2, 6),
+    top:     flatGalleryList.slice(4, 8),
+    bottom:  flatGalleryList.slice(0, 6),
+    alternate: flatGalleryList
+  };
+
+  const centerDisplay = document.getElementById('centerDisplay');
+  const lightbox      = document.getElementById('lightbox');
+  const lightboxImg   = document.getElementById('lightbox-img');
+  const lbSidebar     = document.getElementById('lbSidebar'); // 🟢 新增
+  const barTitle      = document.getElementById('bar-title');
+  const lbCounter     = document.getElementById('lb-counter');
+  const bodyEl        = document.body;
+  
+  const subNavContainer = document.getElementById('subNavContainer');
+  const subNavList      = document.getElementById('subNavList');
+
+  let currentGalleryData = [];
+  let currentIndex = 0;
+  let activeMainCat = 'confirm'; 
+  let currentSubList = []; 
+
+  const SUB_MENUS = {
+    confirm: [ { id: 'confirmSS', label: 'SS' }, { id: 'confirmFW', label: 'FW' } ],
+    fix: [
+      { id: 'adjust', label: '调整指令' },
+      { id: 'coat', label: '仅外套' },
+      { id: 'top', label: '仅上装' },
+      { id: 'bottom', label: '仅下装' },
+      { id: 'alternate', label: '交替' }
+    ]
+  };
+
+  /* ========= 初始化 ========= */
+  function initApp() {
+    bodyEl.classList.remove('on-home');
+    renderSubMenu('confirm', true);
+    subNavContainer.classList.add('expanded');
+    barTitle.textContent = 'SINCE 2023';
+  }
+
+  function renderSubMenu(mainCat, autoSelectFirst = true) {
+    subNavList.innerHTML = '';
+    currentSubList = SUB_MENUS[mainCat] || [];
+    
+    currentSubList.forEach((item, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'sub-btn';
+      btn.dataset.subcat = item.id;
+      btn.textContent = item.label;
+      
+      if (autoSelectFirst && index === 0) btn.classList.add('active'); 
+      
+      btn.onclick = (e) => {
+        e.stopPropagation(); 
+        document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        currentGalleryData = CATEGORY_DATA[item.id];
+        openLightbox(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      
+      subNavList.appendChild(btn);
+    });
+  }
+
+  function handleMainClick(e, btn, mainCat) {
+    e.stopPropagation(); 
+    const isSameCat = (activeMainCat === mainCat);
+    const isCurrentlyExpanded = subNavContainer.classList.contains('expanded');
+
+    document.querySelectorAll('.pill-main-row .segment-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMainCat = mainCat;
+
+    if (isSameCat && isCurrentlyExpanded) {
+      subNavContainer.classList.remove('expanded');
+    } else {
+      subNavContainer.classList.add('expanded');
+      renderSubMenu(mainCat, true);
+    }
+    
+    closeLightbox();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ========= 大图控制 ========= */
+  function openLightbox(index) {
+    currentIndex = index;
+    lightbox.classList.add('active');
+    centerDisplay.classList.add('hidden');
+    
+    bodyEl.style.touchAction = 'none'; 
+    bodyEl.classList.add('lightbox-open'); 
+    subNavContainer.classList.remove('expanded');
+    updateLightboxContent();
+  }
+
+  function updateLightboxContent() {
+    const item = currentGalleryData[currentIndex];
+    const imgSrc = `./images/${item.folder}/${item.file}`;
+    
+    lightboxImg.src = imgSrc;
+    lightboxImg.onerror = function() {
+      this.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop';
+    };
+
+    barTitle.textContent = item.brand;
+    lbCounter.textContent = `${(currentIndex + 1).toString().padStart(2, '0')} / ${currentGalleryData.length.toString().padStart(2, '0')}`;
+
+    // 🟢 更新缩略图列表
+    renderSidebar();
+  }
+
+  /* ========= 🟢 渲染左侧缩略图 ========= */
+  function renderSidebar() {
+    lbSidebar.innerHTML = '';
+    
+    currentGalleryData.forEach((item, index) => {
+      const thumb = document.createElement('img');
+      const imgSrc = `./images/${item.folder}/${item.file}`;
+      
+      thumb.src = imgSrc;
+      thumb.className = `lb-thumb ${index === currentIndex ? 'active' : ''}`;
+      
+      // 缩略图挂掉也用占位图
+      thumb.onerror = function() {
+        this.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop';
+      };
+      
+      thumb.onclick = () => {
+        currentIndex = index;
+        updateLightboxContent();
+      };
+      
+      lbSidebar.appendChild(thumb);
+    });
+
+    // 自动将激活的缩略图滚动到可视区域
+    const activeThumb = lbSidebar.querySelector('.lb-thumb.active');
+    if (activeThumb) {
+      activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  /* 🟢 缩略图上下滚动按钮逻辑 */
+  function scrollSidebar(direction) {
+    lbSidebar.scrollBy({
+      top: direction * 120, // 每次滚动的像素距离
+      behavior: 'smooth'
+    });
+  }
+
+  function prevImage() { if (currentIndex > 0) { currentIndex--; updateLightboxContent(); } }
+  function nextImage() { if (currentIndex < currentGalleryData.length - 1) { currentIndex++; updateLightboxContent(); } }
+
+  function closeLightbox() {
+    lightbox.classList.remove('active');
+    centerDisplay.classList.remove('hidden');
+    
+    bodyEl.style.touchAction = 'auto';
+    bodyEl.style.overflow = ''; 
+    bodyEl.classList.remove('lightbox-open');
+    
+    barTitle.textContent = 'SINCE 2023';
+    
+    const btn = document.querySelector(`.segment-btn[data-cat="${activeMainCat}"]`);
+    if (btn) {
+      document.querySelectorAll('.pill-main-row .segment-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      subNavContainer.classList.add('expanded');
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') prevImage();
+    if (e.key === 'ArrowRight') nextImage();
+  });
+
+  document.addEventListener('DOMContentLoaded', initApp);
+
+</script>
+</body>
+</html>
