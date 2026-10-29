@@ -9,8 +9,7 @@
       --bg-body: #FFFFFF;
       --text-main: #000000;
       --text-muted: #888888;
-      /* 大图模式的极简深色玻璃 */
-      --bg-glass-dark: rgba(20, 20, 20, 0.7);
+      --bg-glass-dark: rgba(20, 20, 20, 0.75);
       --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
     }
 
@@ -22,20 +21,19 @@
       color: var(--text-main);
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
-      /* 底部留出悬浮栏的空间 */
-      padding-bottom: 120px; 
+      padding-bottom: 140px;
     }
 
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 4px; }
 
     /* ========= 极简画廊区域 ========= */
-    .gallery-scroll { padding: 60px 5vw 40px 5vw; }
+    .gallery-scroll { padding: 40px 5vw 20px 5vw; }
     
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 60px 40px;
+      gap: 40px 30px; 
     }
     
     .gallery-item { cursor: pointer; display: flex; flex-direction: column; }
@@ -49,13 +47,6 @@
     }
     
     .gallery-item:hover img { opacity: 0.7; }
-
-    .item-info { margin-top: 20px; }
-    .item-name {
-      font-size: 12px; font-weight: 600; letter-spacing: 1px;
-      text-transform: uppercase; margin-bottom: 6px;
-    }
-    .item-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; }
 
     /* ========= 大图预览 ========= */
     .lightbox {
@@ -71,7 +62,8 @@
       position: absolute;
       top: 0; bottom: 0; left: 0; right: 0;
       display: flex; align-items: center; justify-content: center;
-      padding: 40px 40px 120px 40px;
+      /* ★ 这里的 padding-bottom 预留了 140px，确保大图不被状态栏遮挡 */
+      padding: 40px 40px 140px 40px;
       pointer-events: none;
     }
 
@@ -85,14 +77,12 @@
       max-height: 100%;
       object-fit: contain;
       pointer-events: auto;
-      /* 去掉厚重的阴影，完全融入黑色背景 */
-      box-shadow: none; 
     }
 
-    /* ========= 统一底部悬浮状态栏 (极简版) ========= */
+    /* ========= ★ 统一底部悬浮栏 ========= */
     .shared-bottom-bar {
       position: fixed;
-      bottom: 40px; left: 0; right: 0;
+      bottom: 30px; left: 0; right: 0;
       display: flex;
       justify-content: center;
       z-index: 1100;
@@ -102,26 +92,31 @@
     .bottom-pill {
       pointer-events: auto;
       display: flex;
-      align-items: center;
-      /* 默认在白色背景下的样式 */
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 40px;
-      padding: 8px 12px 8px 24px;
-      border: none; /* 去掉边框 */
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08); /* 只保留极轻柔的阴影 */
-      gap: 30px;
-      min-width: 480px;
-      justify-content: space-between;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 24px;
+      padding: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
     }
 
-    /* 左侧文本 */
+    /* 顶行：主状态栏 */
+    .pill-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      padding: 4px 16px 4px 16px;
+      min-width: 420px; 
+    }
+
     .bar-title {
       color: #000;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       white-space: nowrap;
@@ -129,14 +124,13 @@
       transition: color 0.3s;
     }
 
-    /* 右侧内容区 */
     .bar-content {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    /* --- 首页模式：分类按钮 --- */
+    /* --- 首页模式：主分类按钮 --- */
     .home-nav {
       display: flex;
       align-items: center;
@@ -151,7 +145,7 @@
       font-weight: 500;
       letter-spacing: 0.5px;
       padding: 8px 16px;
-      border-radius: 30px;
+      border-radius: 12px;
       cursor: pointer;
       transition: all 0.3s;
       white-space: nowrap;
@@ -162,7 +156,53 @@
     .segment-btn.active {
       color: #000;
       font-weight: 600;
-      background: rgba(0, 0, 0, 0.05); /* 极淡的背景色替代高亮蓝 */
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- 二级菜单 --- */
+    .sub-nav-container {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid transparent;
+    }
+    
+    .sub-nav-container.expanded {
+      max-height: 60px;
+      opacity: 1;
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .sub-nav-list {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sub-btn {
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .sub-btn:hover { color: #000; }
+    
+    .sub-btn.active {
+      color: #000;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.04);
     }
 
     /* --- 大图模式：翻页与关闭 --- */
@@ -207,11 +247,11 @@
     
     .close-btn:hover { opacity: 1; }
 
-    /* ★ 状态切换：大图模式下的极简深色化 ★ */
+    /* ★ 大图模式下的极简深色化 ★ */
     body.lightbox-open .home-nav { display: none; }
     body.lightbox-open .lightbox-nav { display: flex; }
+    body.lightbox-open .sub-nav-container { display: none; }
     
-    /* 悬浮栏变色、透明 */
     body.lightbox-open .bottom-pill {
       background: var(--bg-glass-dark);
       backdrop-filter: blur(24px);
@@ -219,34 +259,33 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     }
     
-    /* 文字颜色反转 */
-    body.lightbox-open .bar-title {
-      color: #FFF;
-      cursor: default;
-    }
+    body.lightbox-open .bar-title { color: #FFF; cursor: default; }
 
-    /* ========= 移动端适配 ========= */
+    /* ========= 移动端适配（专门处理大图防遮挡） ========= */
     @media (max-width: 768px) {
-      .gallery-scroll { padding: 40px 20px 40px 20px; }
-      .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 15px; }
+      .gallery-scroll { padding: 20px 20px 20px 20px; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
       
       .shared-bottom-bar { bottom: 20px; padding: 0 10px; }
-      .bottom-pill {
-        min-width: auto;
-        width: 100%;
-        max-width: 95vw;
-        padding: 6px 6px 6px 20px;
-        gap: 10px;
-      }
+      .bottom-pill { width: 100%; max-width: 95vw; }
+      .pill-main-row { min-width: auto; gap: 10px; padding: 4px 8px; }
       
       .bar-title { font-size: 11px; letter-spacing: 1px; }
-      .segment-btn { padding: 6px 10px; font-size: 11px; }
+      .segment-btn { padding: 6px 12px; font-size: 11px; }
       
-      .lb-main-area { padding: 20px 20px 100px 20px; }
+      /* ★ 移动端大图容器内边距调整，确保图片在状态栏上方 */
+      .lb-main-area { 
+        padding: 20px 20px 120px 20px; /* 底部留白 120px 绝对安全 */
+      }
       
+      /* 移动端大图状态栏控件微调，使其更好点按 */
       .counter { min-width: 40px; font-size: 11px; }
       .close-btn { font-size: 11px; padding: 6px 8px; }
-      .arrow-btn { width: 28px; height: 28px; }
+      .arrow-btn { width: 32px; height: 32px; } /* 稍微加大点按热区 */
+      
+      .sub-nav-container.expanded { max-height: 80px; }
+      .sub-nav-list { flex-wrap: wrap; justify-content: center; }
+      .sub-btn { padding: 6px 10px; font-size: 11px; }
     }
   </style>
 </head>
@@ -266,36 +305,45 @@
     </div>
   </div>
 
-  <!-- ★ 统一底部悬浮栏（极简版） ★ -->
+  <!-- ★ 统一底部悬浮栏 ★ -->
   <div class="shared-bottom-bar">
-    <div class="bottom-pill">
-      <!-- 左侧标题 -->
-      <div class="bar-title" id="bar-title" onclick="goHome()">MUSEUM DEPARTMENT</div>
-      
-      <!-- 右侧内容 -->
-      <div class="bar-content">
-        <!-- 1. 首页模式：分类切换 -->
-        <div class="home-nav">
-          <button class="segment-btn active" data-cat="all" onclick="switchCategory(this, 'all')">全部</button>
-          <button class="segment-btn" data-cat="fix" onclick="switchCategory(this, 'fix')">修正指令</button>
-          <button class="segment-btn" data-cat="about" onclick="switchCategory(this, 'about')">关于系统</button>
-          <button class="segment-btn" data-cat="tops" onclick="switchCategory(this, 'tops')">上装</button>
-        </div>
-
-        <!-- 2. 大图模式：翻页与关闭 -->
-        <div class="lightbox-nav">
-          <div class="nav-group">
-            <button class="arrow-btn" onclick="prevImage()">
-              <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <div class="counter" id="lb-counter">01 / 08</div>
-            <button class="arrow-btn" onclick="nextImage()">
-              <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
+    <div class="bottom-pill" id="bottomPill">
+      <!-- 顶行：主状态栏 -->
+      <div class="pill-main-row">
+        <!-- 左侧标题 -->
+        <div class="bar-title" id="bar-title" onclick="goHome()">MUSEUM DEPARTMENT</div>
+        
+        <!-- 右侧内容 -->
+        <div class="bar-content">
+          <!-- 1. 首页模式 -->
+          <div class="home-nav">
+            <button class="segment-btn active" data-cat="confirm" onclick="handleMainClick(this, 'confirm')">确认成立</button>
+            <button class="segment-btn" data-cat="fix" onclick="handleMainClick(this, 'fix')">修正指令</button>
           </div>
-          <button class="close-btn" onclick="closeLightbox()">Close</button>
+
+          <!-- 2. 大图模式 -->
+          <div class="lightbox-nav">
+            <div class="nav-group">
+              <button class="arrow-btn" onclick="prevImage()">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div class="counter" id="lb-counter">01 / 08</div>
+              <button class="arrow-btn" onclick="nextImage()">
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <button class="close-btn" onclick="closeLightbox()">CLOSE</button>
+          </div>
         </div>
       </div>
+
+      <!-- ★ 动态二级菜单容器 ★ -->
+      <div class="sub-nav-container" id="subNavContainer">
+        <div class="sub-nav-list" id="subNavList">
+          <!-- 内容会由 JS 动态注入 -->
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -313,10 +361,13 @@
   ];
 
   const CATEGORY_DATA = {
-    all:   confirmedData, 
-    fix:   confirmedData.slice(0, 4),
-    about: confirmedData.slice(0, 2),
-    tops:  confirmedData.slice(4, 8)
+    confirmSS: confirmedData.slice(0, 4), 
+    confirmFW: confirmedData.slice(4, 8),
+    adjust:  confirmedData.slice(0, 4),
+    coat:    confirmedData.slice(2, 5),
+    top:     confirmedData.slice(4, 6),
+    bottom:  confirmedData.slice(6, 8),
+    alternate: [...confirmedData].reverse()
   };
 
   const grid        = document.getElementById('gallery-grid');
@@ -325,9 +376,29 @@
   const barTitle    = document.getElementById('bar-title');
   const lbCounter   = document.getElementById('lb-counter');
   const bodyEl      = document.body;
+  
+  const subNavContainer = document.getElementById('subNavContainer');
+  const subNavList      = document.getElementById('subNavList');
 
   let currentIndex = 0;
   let currentGalleryData = [];
+  
+  let activeMainCat = 'confirm'; 
+  let currentSubList = []; 
+
+  const SUB_MENUS = {
+    confirm: [
+      { id: 'confirmSS', label: 'SS' },
+      { id: 'confirmFW', label: 'FW' }
+    ],
+    fix: [
+      { id: 'adjust', label: '调整指令' },
+      { id: 'coat', label: '仅外套' },
+      { id: 'top', label: '仅上装' },
+      { id: 'bottom', label: '仅下装' },
+      { id: 'alternate', label: '交替' }
+    ]
+  };
 
   /* ========= 渲染网格 ========= */
   function renderGallery(images) {
@@ -338,17 +409,67 @@
       const el = document.createElement('div');
       el.className = 'gallery-item';
       const imgSrc = `./images/${item.folder}/${item.file}`;
+      
       el.innerHTML = `
         <img src="${imgSrc}" loading="lazy" alt="${item.name}"
              onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop'">
-        <div class="item-info">
-          <div class="item-name">${item.name.toUpperCase()}</div>
-          <div class="item-sub">IDX.${(index + 1).toString().padStart(2, '0')}</div>
-        </div>
       `;
+      
       el.addEventListener('click', () => openLightbox(index));
       grid.appendChild(el);
     });
+  }
+
+  /* ========= 渲染二级菜单 HTML ========= */
+  function renderSubMenu(mainCat, autoSelectFirst = true) {
+    subNavList.innerHTML = '';
+    currentSubList = SUB_MENUS[mainCat] || [];
+    
+    currentSubList.forEach((item, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'sub-btn';
+      btn.dataset.subcat = item.id;
+      btn.textContent = item.label;
+      
+      if (autoSelectFirst && index === 0) {
+        btn.classList.add('active'); 
+      }
+      
+      btn.onclick = () => {
+        document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderGallery(CATEGORY_DATA[item.id]);
+        closeLightbox();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      
+      subNavList.appendChild(btn);
+    });
+  }
+
+  /* ========= ★ 核心交互：点击主分类 ★ ========= */
+  function handleMainClick(btn, mainCat) {
+    const isSameCat = (activeMainCat === mainCat);
+    const isCurrentlyExpanded = subNavContainer.classList.contains('expanded');
+
+    document.querySelectorAll('.pill-main-row .segment-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMainCat = mainCat;
+
+    if (isSameCat && isCurrentlyExpanded) {
+      subNavContainer.classList.remove('expanded');
+    } else {
+      subNavContainer.classList.add('expanded');
+      renderSubMenu(mainCat, true);
+      
+      if (currentSubList.length > 0) {
+        const firstSubId = currentSubList[0].id;
+        renderGallery(CATEGORY_DATA[firstSubId]);
+      }
+    }
+    
+    closeLightbox();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /* ========= 打开与更新大图 ========= */
@@ -357,7 +478,7 @@
     lightbox.classList.add('active');
     bodyEl.style.overflow = 'hidden';
     bodyEl.classList.add('lightbox-open'); 
-    
+    subNavContainer.classList.remove('expanded');
     updateLightboxContent();
   }
 
@@ -370,6 +491,7 @@
       this.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop';
     };
 
+    // 大图模式显示品牌名
     barTitle.textContent = item.name;
     lbCounter.textContent = `${(currentIndex + 1).toString().padStart(2, '0')} / ${currentGalleryData.length.toString().padStart(2, '0')}`;
   }
@@ -382,26 +504,16 @@
     lightbox.classList.remove('active');
     bodyEl.style.overflow = '';
     bodyEl.classList.remove('lightbox-open');
-    
-    // 恢复底栏左侧默认文字
+    // 关闭大图时恢复默认标题
     barTitle.textContent = 'MUSEUM DEPARTMENT';
-  }
-
-  /* ========= 分类切换 ========= */
-  function switchCategory(btn, cat) {
-    document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-
-    const data = CATEGORY_DATA[cat] || CATEGORY_DATA.all;
-    renderGallery(data);
-    closeLightbox();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function goHome() {
     if(bodyEl.classList.contains('lightbox-open')) return; 
-    const allBtn = document.querySelector('.segment-btn[data-cat="all"]');
-    switchCategory(allBtn, 'all');
+    const confirmBtn = document.querySelector('.segment-btn[data-cat="confirm"]');
+    if (activeMainCat !== 'confirm' || !subNavContainer.classList.contains('expanded')) {
+      handleMainClick(confirmBtn, 'confirm');
+    }
   }
 
   /* ========= 键盘控制 ========= */
@@ -414,7 +526,9 @@
 
   /* ========= 初始化 ========= */
   document.addEventListener('DOMContentLoaded', () => {
-    renderGallery(CATEGORY_DATA.all);
+    subNavContainer.classList.add('expanded');
+    renderSubMenu('confirm', true);
+    renderGallery(CATEGORY_DATA.confirmSS);
   });
 </script>
 </body>
