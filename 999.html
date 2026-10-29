@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MUSEUM DEPARTMENT</title>
+  <style>
+    :root {
+      --bg-body: #FFFFFF;
+      --text-main: #000000;
+      --text-muted: #888888;
+      --bg-glass-dark: rgba(20, 20, 20, 0.75);
+      --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* 🟢 移动端优化：去除点击闪蓝、禁止长按选中 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-body);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      padding-bottom: 140px;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 4px; }
+
+    /* ========= 极简文字列表区域 ========= */
+    .list-scroll { 
+      padding: 60px 5vw 20px 5vw; 
+      max-width: 1000px; 
+      margin: 0 auto; 
+    }
+    
+    .text-list {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* 每一行档案：默认纯黑，无边框，无位移 */
+    .list-item {
+      display: flex;
+      align-items: baseline;
+      padding: 20px 0;
+      cursor: pointer;
+      gap: 30px;
+      transition: opacity 0.3s ease; /* 仅对透明度做平滑过渡 */
+    }
+
+    /* 🟢 触碰/悬浮时，整体降低透明度 */
+    .list-item:hover,
+    .list-item:active {
+      opacity: 0.4;
+    }
+
+    .item-idx {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      font-family: monospace; 
+      width: 30px;
+    }
+
+    .item-brand {
+      font-size: 20px;
+      font-weight: 700; /* 恢复加粗，保持黑白对比的张力 */
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    /* ========= 大图预览 ========= */
+    .lightbox {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000000;
+      z-index: 1000; display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+    }
+    
+    .lightbox.active { opacity: 1; pointer-events: auto; }
+
+    .lb-main-area {
+      position: absolute;
+      top: 0; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 40px 140px 40px;
+      pointer-events: none;
+    }
+
+    .lb-img-container {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    
+    .lb-img-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: auto;
+    }
+
+    /* ========= ★ 统一底部悬浮栏 ========= */
+    .shared-bottom-bar {
+      position: fixed;
+      bottom: 30px; left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 1100;
+      pointer-events: none;
+    }
+
+    .bottom-pill {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 24px;
+      padding: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    /* 顶行：主状态栏 */
+    .pill-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      padding: 4px 16px 4px 16px;
+      min-width: 420px; 
+    }
+
+    /* 大图模式下品牌名过长时的省略号处理 */
+    .bar-title {
+      color: #000;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px; 
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .bar-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0; 
+    }
+
+    /* --- 首页模式：主分类按钮 --- */
+    .home-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .segment-btn {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    
+    .segment-btn:hover { color: #000; }
+    
+    .segment-btn.active {
+      color: #000;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    /* --- 二级菜单 --- */
+    .sub-nav-container {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid transparent;
+    }
+    
+    .sub-nav-container.expanded {
+      max-height: 60px;
+      opacity: 1;
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .sub-nav-list {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sub-btn {
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .sub-btn:hover { color: #000; }
+    
+    .sub-btn.active {
+      color: #000;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    /* --- 大图模式：翻页与关闭 --- */
+    .lightbox-nav {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0; 
+    }
+    
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .arrow-btn {
+      background: transparent; border: none; color: #FFF;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: opacity 0.2s;
+      opacity: 0.6;
+    }
+    
+    .arrow-btn:hover { opacity: 1; }
+    .arrow-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    
+    .counter {
+      color: #FFF; font-size: 12px; font-weight: 400;
+      letter-spacing: 1px;
+      min-width: 50px; text-align: center;
+      opacity: 0.8;
+      white-space: nowrap;
+    }
+    
+    .close-btn {
+      background: transparent; border: none;
+      color: #FFF; font-size: 12px; font-weight: 500;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: opacity 0.2s;
+      padding: 8px 12px;
+      opacity: 0.6;
+      white-space: nowrap;
+    }
+    
+    .close-btn:hover { opacity: 1; }
+
+    /* ★ 大图模式下的极简深色化 ★ */
+    body.lightbox-open .home-nav { display: none; }
+    body.lightbox-open .lightbox-nav { display: flex; }
+    body.lightbox-open .sub-nav-container { display: none; }
+    
+    body.lightbox-open .bottom-pill {
+      background: var(--bg-glass-dark);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    body.lightbox-open .bar-title { color: #FFF; cursor: default; }
+
+    /* ========= 移动端适配 ========= */
+    @media (max-width: 768px) {
+      .list-scroll { padding: 40px 20px 20px 20px; }
+      
+      .list-item {
+        padding: 16px 0;
+        gap: 20px;
+      }
+      .item-brand { font-size: 18px; }
+
+      .shared-bottom-bar { bottom: 20px; padding: 0 10px; width: 100%; }
+      .bottom-pill { 
+        width: 100%; 
+        max-width: 100%; 
+        border-radius: 20px;
+      }
+      .pill-main-row { 
+        min-width: auto; 
+        gap: 10px; 
+        padding: 4px 8px; 
+        flex-wrap: nowrap;
+      }
+      
+      .bar-title { font-size: 11px; letter-spacing: 1px; max-width: 80px; }
+      .segment-btn { padding: 6px 12px; font-size: 11px; }
+      
+      .lb-main-area { padding: 20px 20px 120px 20px; }
+      
+      .lightbox-nav { gap: 8px; }
+      .nav-group { gap: 2px; }
+      .counter { min-width: 40px; font-size: 11px; }
+      .close-btn { font-size: 11px; padding: 6px 8px; }
+      .arrow-btn { width: 28px; height: 28px; }
+      
+      .sub-nav-container.expanded { max-height: 80px; }
+      .sub-nav-list { flex-wrap: wrap; justify-content: center; }
+      .sub-btn { padding: 6px 10px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 极简文字列表区域 -->
+  <main class="list-scroll">
+    <div class="text-list" id="text-list"></div>
+  </main>
+
+  <!-- 大图查看器 -->
+  <div class="lightbox" id="lightbox">
+    <div class="lb-main-area">
+      <div class="lb-img-container">
+        <img id="lightbox-img" src="" alt="">
+      </div>
+    </div>
+  </div>
+
+  <!-- ★ 统一底部悬浮栏 ★ -->
+  <div class="shared-bottom-bar">
+    <div class="bottom-pill" id="bottomPill">
+      <!-- 顶行：主状态栏 -->
+      <div class="pill-main-row">
+        <!-- 左侧标题 -->
+        <div class="bar-title" id="bar-title" onclick="goHome()">MUSEUM DEPARTMENT</div>
+        
+        <!-- 右侧内容 -->
+        <div class="bar-content">
+          <!-- 1. 首页模式 -->
+          <div class="home-nav">
+            <button class="segment-btn active" data-cat="confirm" onclick="handleMainClick(this, 'confirm')">确认成立</button>
+            <button class="segment-btn" data-cat="fix" onclick="handleMainClick(this, 'fix')">修正指令</button>
+          </div>
+
+          <!-- 2. 大图模式 -->
+          <div class="lightbox-nav">
+            <div class="nav-group">
+              <button class="arrow-btn" onclick="prevImage()">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div class="counter" id="lb-counter">01 / 08</div>
+              <button class="arrow-btn" onclick="nextImage()">
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <button class="close-btn" onclick="closeLightbox()">CLOSE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ★ 动态二级菜单容器 ★ -->
+      <div class="sub-nav-container" id="subNavContainer">
+        <div class="sub-nav-list" id="subNavList">
+          <!-- 内容会由 JS 动态注入 -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  /* ========= 数据 ========= */
+  const confirmedData = [
+    { folder: 'etro',          name: 'ETRO',         file: '01.JPG' },
+    { folder: 'demobaza',      name: 'DEMOBAZA',     file: '01.webp' },
+    { folder: 'heos',          name: 'HEOS',         file: '01.png' },
+    { folder: 'parsons-bfa',   name: 'PARSONS BFA',  file: '01.JPG' },
+    { folder: 'hermes',        name: 'HERMÈS',       file: '01.JPG' },
+    { folder: 'saint-laurent', name: 'SAINT LAURENT',file: '01.JPG' },
+    { folder: 'saint-laurent', name: 'SAINT LAURENT',file: '02.JPG' },
+    { folder: 'saint-laurent', name: 'SAINT LAURENT',file: '03.JPG' }
+  ];
+
+  const CATEGORY_DATA = {
+    confirmSS: confirmedData.slice(0, 4), 
+    confirmFW: confirmedData.slice(4, 8),
+    adjust:  confirmedData.slice(0, 4),
+    coat:    confirmedData.slice(2, 5),
+    top:     confirmedData.slice(4, 6),
+    bottom:  confirmedData.slice(6, 8),
+    alternate: [...confirmedData].reverse()
+  };
+
+  const textList    = document.getElementById('text-list');
+  const lightbox    = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const barTitle    = document.getElementById('bar-title');
+  const lbCounter   = document.getElementById('lb-counter');
+  const bodyEl      = document.body;
+  
+  const subNavContainer = document.getElementById('subNavContainer');
+  const subNavList      = document.getElementById('subNavList');
+
+  let currentIndex = 0;
+  let currentGalleryData = [];
+  
+  let activeMainCat = 'confirm'; 
+  let currentSubList = []; 
+
+  const SUB_MENUS = {
+    confirm: [
+      { id: 'confirmSS', label: 'SS' },
+      { id: 'confirmFW', label: 'FW' }
+    ],
+    fix: [
+      { id: 'adjust', label: '调整指令' },
+      { id: 'coat', label: '仅外套' },
+      { id: 'top', label: '仅上装' },
+      { id: 'bottom', label: '仅下装' },
+      { id: 'alternate', label: '交替' }
+    ]
+  };
+
+  /* ========= 渲染文字列表 ========= */
+  function renderTextList(images) {
+    textList.innerHTML = '';
+    currentGalleryData = images;
+
+    images.forEach((item, index) => {
+      const el = document.createElement('div');
+      el.className = 'list-item';
+      
+      const idxStr = (index + 1).toString().padStart(2, '0');
+      el.innerHTML = `
+        <div class="item-idx">${idxStr}</div>
+        <div class="item-brand">${item.name}</div>
+      `;
+      
+      el.addEventListener('click', () => openLightbox(index));
+      textList.appendChild(el);
+    });
+  }
+
+  /* ========= 渲染二级菜单 HTML ========= */
+  function renderSubMenu(mainCat, autoSelectFirst = true) {
+    subNavList.innerHTML = '';
+    currentSubList = SUB_MENUS[mainCat] || [];
+    
+    currentSubList.forEach((item, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'sub-btn';
+      btn.dataset.subcat = item.id;
+      btn.textContent = item.label;
+      
+      if (autoSelectFirst && index === 0) {
+        btn.classList.add('active'); 
+      }
+      
+      btn.onclick = () => {
+        document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTextList(CATEGORY_DATA[item.id]);
+        closeLightbox();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      
+      subNavList.appendChild(btn);
+    });
+  }
+
+  /* ========= ★ 核心交互：点击主分类 ★ ========= */
+  function handleMainClick(btn, mainCat) {
+    const isSameCat = (activeMainCat === mainCat);
+    const isCurrentlyExpanded = subNavContainer.classList.contains('expanded');
+
+    document.querySelectorAll('.pill-main-row .segment-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMainCat = mainCat;
+
+    if (isSameCat && isCurrentlyExpanded) {
+      subNavContainer.classList.remove('expanded');
+    } else {
+      subNavContainer.classList.add('expanded');
+      renderSubMenu(mainCat, true);
+      
+      if (currentSubList.length > 0) {
+        const firstSubId = currentSubList[0].id;
+        renderTextList(CATEGORY_DATA[firstSubId]);
+      }
+    }
+    
+    closeLightbox();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ========= 打开与更新大图 ========= */
+  function openLightbox(index) {
+    currentIndex = index;
+    lightbox.classList.add('active');
+    bodyEl.style.overflow = 'hidden';
+    bodyEl.classList.add('lightbox-open'); 
+    subNavContainer.classList.remove('expanded');
+    updateLightboxContent();
+  }
+
+  function updateLightboxContent() {
+    const item = currentGalleryData[currentIndex];
+    const imgSrc = `./images/${item.folder}/${item.file}`;
+    
+    lightboxImg.src = imgSrc;
+    lightboxImg.onerror = function() {
+      this.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop';
+    };
+
+    barTitle.textContent = item.name;
+    lbCounter.textContent = `${(currentIndex + 1).toString().padStart(2, '0')} / ${currentGalleryData.length.toString().padStart(2, '0')}`;
+  }
+
+  function prevImage() { if (currentIndex > 0) { currentIndex--; updateLightboxContent(); } }
+  function nextImage() { if (currentIndex < currentGalleryData.length - 1) { currentIndex++; updateLightboxContent(); } }
+
+  /* ========= 关闭大图 ========= */
+  function closeLightbox() {
+    lightbox.classList.remove('active');
+    bodyEl.style.overflow = '';
+    bodyEl.classList.remove('lightbox-open');
+    barTitle.textContent = 'MUSEUM DEPARTMENT';
+  }
+
+  function goHome() {
+    if(bodyEl.classList.contains('lightbox-open')) return; 
+    const confirmBtn = document.querySelector('.segment-btn[data-cat="confirm"]');
+    if (activeMainCat !== 'confirm' || !subNavContainer.classList.contains('expanded')) {
+      handleMainClick(confirmBtn, 'confirm');
+    }
+  }
+
+  /* ========= 键盘控制 ========= */
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') prevImage();
+    if (e.key === 'ArrowRight') nextImage();
+  });
+
+  /* ========= 初始化 ========= */
+  document.addEventListener('DOMContentLoaded', () => {
+    subNavContainer.classList.add('expanded');
+    renderSubMenu('confirm', true);
+    renderTextList(CATEGORY_DATA.confirmSS);
+  });
+</script>
+</body>
+</html>
