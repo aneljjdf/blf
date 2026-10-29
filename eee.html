@@ -15,28 +15,23 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* 🟢 移动端优化：去除点击闪蓝、禁止长按选中 */
     * {
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
       user-select: none;
     }
 
-    body {
+    html, body {
       font-family: var(--font-main);
       background: var(--bg-body);
       color: var(--text-main);
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
-      padding-bottom: 140px;
     }
-
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 4px; }
 
     /* ========= 极简文字列表区域 ========= */
     .list-scroll { 
-      padding: 60px 5vw 20px 5vw; 
+      padding: 60px 5vw 160px 5vw; 
       max-width: 1000px; 
       margin: 0 auto; 
       position: relative;
@@ -55,10 +50,10 @@
       cursor: pointer;
       gap: 30px;
       transition: opacity 0.3s ease;
+      touch-action: manipulation; /* 确保手机端触摸流畅 */
     }
 
-    .list-item:hover,
-    .list-item:active {
+    .list-item:hover, .list-item:active {
       opacity: 0.4;
     }
 
@@ -83,10 +78,17 @@
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: #000000;
       z-index: 1000; display: flex; flex-direction: column;
-      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+      
+      /* 🟢 默认就是 hidden，彻底从屏幕消失，不遮挡任何点击 */
+      display: none;
+      opacity: 0; 
     }
     
-    .lightbox.active { opacity: 1; pointer-events: auto; }
+    /* 🟢 打开时才恢复显示 */
+    .lightbox.active { 
+      display: flex;
+      opacity: 1; 
+    }
 
     .lb-main-area {
       position: absolute;
@@ -129,10 +131,8 @@
       padding: 8px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
     }
 
-    /* 顶行：主状态栏 */
     .pill-main-row {
       display: flex;
       align-items: center;
@@ -142,7 +142,6 @@
       min-width: 420px; 
     }
 
-    /* 大图模式下品牌名过长时的省略号处理 */
     .bar-title {
       color: #000;
       font-size: 13px;
@@ -164,7 +163,6 @@
       flex-shrink: 0; 
     }
 
-    /* --- 首页模式：主分类按钮 --- */
     .home-nav {
       display: flex;
       align-items: center;
@@ -193,11 +191,10 @@
       background: rgba(0, 0, 0, 0.06);
     }
 
-    /* --- 二级菜单 --- */
     .sub-nav-container {
       max-height: 0;
       opacity: 0;
-      overflow: hidden;
+      overflow: hidden; 
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       justify-content: center;
@@ -239,7 +236,6 @@
       background: rgba(0, 0, 0, 0.04);
     }
 
-    /* --- 大图模式：翻页与关闭 --- */
     .lightbox-nav {
       display: none;
       align-items: center;
@@ -284,7 +280,6 @@
     
     .close-btn:hover { opacity: 1; }
 
-    /* ★ 大图模式下的极简深色化 ★ */
     body.lightbox-open .home-nav { display: none; }
     body.lightbox-open .lightbox-nav { display: flex; }
     body.lightbox-open .sub-nav-container { display: none; }
@@ -299,32 +294,17 @@
     body.lightbox-open .bar-title { color: #FFF; cursor: pointer; }
     body.lightbox-open .bar-title:hover { opacity: 0.7; }
 
-    /* ========= 移动端适配 ========= */
     @media (max-width: 768px) {
-      .list-scroll { padding: 40px 20px 20px 20px; }
-      
-      .list-item {
-        padding: 16px 0;
-        gap: 20px;
-      }
+      .list-scroll { padding: 40px 20px 160px 20px; }
+      .list-item { padding: 16px 0; gap: 20px; }
       .item-brand { font-size: 18px; }
 
       .shared-bottom-bar { bottom: 20px; padding: 0 10px; width: 100%; }
-      .bottom-pill { 
-        width: 100%; 
-        max-width: 100%; 
-        border-radius: 20px;
-      }
-      .pill-main-row { 
-        min-width: auto; 
-        gap: 10px; 
-        padding: 4px 8px; 
-        flex-wrap: nowrap;
-      }
+      .bottom-pill { width: 100%; max-width: 100%; border-radius: 20px; }
+      .pill-main-row { min-width: auto; gap: 10px; padding: 4px 8px; flex-wrap: nowrap; }
       
       .bar-title { font-size: 11px; letter-spacing: 1px; max-width: 80px; }
       .segment-btn { padding: 6px 12px; font-size: 11px; }
-      
       .lb-main-area { padding: 20px 20px 120px 20px; }
       
       .lightbox-nav { gap: 8px; }
@@ -341,12 +321,10 @@
 </head>
 <body>
 
-  <!-- 极简文字列表区域 -->
   <main class="list-scroll">
     <div class="text-list" id="text-list"></div>
   </main>
 
-  <!-- 大图查看器 -->
   <div class="lightbox" id="lightbox">
     <div class="lb-main-area">
       <div class="lb-img-container">
@@ -355,7 +333,6 @@
     </div>
   </div>
 
-  <!-- ★ 统一底部悬浮栏 ★ -->
   <div class="shared-bottom-bar">
     <div class="bottom-pill" id="bottomPill">
       <div class="pill-main-row">
@@ -386,7 +363,7 @@
   </div>
 
 <script>
-  /* ========= 📂 全新的数据结构 (已移除 argueculture) ========= */
+  /* ========= 📂 数据源 ========= */
   const rawData = [
     { folder: 'avavav',                   files: ['01.webp'] },
     { folder: 'bed-j-w-ford',             files: ['01.webp'] },
@@ -397,13 +374,11 @@
     { folder: 'danielle-frankel',         files: ['01.webp'] }
   ];
 
-  // 整理成扁平的数据结构
   let flatGalleryList = [];
   function buildGalleryList() {
     flatGalleryList = [];
     rawData.forEach(item => {
       const displayName = item.folder.replace(/-/g, ' ').toUpperCase();
-      
       item.files.forEach((file, idx) => {
         flatGalleryList.push({
           brand: displayName,
@@ -416,7 +391,6 @@
   }
   buildGalleryList();
 
-  // 分类数据源
   const CATEGORY_DATA = {
     confirmSS: flatGalleryList, 
     confirmFW: [...flatGalleryList].reverse(),
@@ -439,15 +413,11 @@
 
   let currentGalleryData = [];
   let currentIndex = 0;
-  
   let activeMainCat = 'confirm'; 
   let currentSubList = []; 
 
   const SUB_MENUS = {
-    confirm: [
-      { id: 'confirmSS', label: 'SS' },
-      { id: 'confirmFW', label: 'FW' }
-    ],
+    confirm: [ { id: 'confirmSS', label: 'SS' }, { id: 'confirmFW', label: 'FW' } ],
     fix: [
       { id: 'adjust', label: '调整指令' },
       { id: 'coat', label: '仅外套' },
@@ -485,7 +455,7 @@
     });
   }
 
-  /* ========= 渲染二级菜单 HTML ========= */
+  /* ========= 渲染二级菜单 ========= */
   function renderSubMenu(mainCat, autoSelectFirst = true) {
     subNavList.innerHTML = '';
     currentSubList = SUB_MENUS[mainCat] || [];
@@ -496,11 +466,10 @@
       btn.dataset.subcat = item.id;
       btn.textContent = item.label;
       
-      if (autoSelectFirst && index === 0) {
-        btn.classList.add('active'); 
-      }
+      if (autoSelectFirst && index === 0) btn.classList.add('active'); 
       
-      btn.onclick = () => {
+      btn.onclick = (e) => {
+        e.stopPropagation(); 
         document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderTextList(CATEGORY_DATA[item.id]);
@@ -512,7 +481,7 @@
     });
   }
 
-  /* ========= ★ 核心交互：点击主分类 ★ ========= */
+  /* ========= 主分类切换逻辑 ========= */
   function handleMainClick(btn, mainCat) {
     const isSameCat = (activeMainCat === mainCat);
     const isCurrentlyExpanded = subNavContainer.classList.contains('expanded');
@@ -528,8 +497,7 @@
       renderSubMenu(mainCat, true);
       
       if (currentSubList.length > 0) {
-        const firstSubId = currentSubList[0].id;
-        renderTextList(CATEGORY_DATA[firstSubId]);
+        renderTextList(CATEGORY_DATA[currentSubList[0].id]);
       }
     }
     
@@ -540,8 +508,8 @@
   /* ========= 打开与更新大图 ========= */
   function openLightbox(index) {
     currentIndex = index;
-    lightbox.classList.add('active');
-    bodyEl.style.overflow = 'hidden';
+    lightbox.classList.add('active'); // display: flex 生效
+    bodyEl.style.touchAction = 'none'; 
     bodyEl.classList.add('lightbox-open'); 
     subNavContainer.classList.remove('expanded');
     updateLightboxContent();
@@ -565,8 +533,11 @@
 
   /* ========= 关闭大图 ========= */
   function closeLightbox() {
+    // 🟢 彻底移除 active 类，触发 CSS 的 display: none，绝不留任何触摸遮挡
     lightbox.classList.remove('active');
-    bodyEl.style.overflow = '';
+    
+    bodyEl.style.touchAction = 'auto';
+    bodyEl.style.overflow = ''; 
     bodyEl.classList.remove('lightbox-open');
     
     barTitle.textContent = 'MUSEUM DEPARTMENT';
@@ -587,7 +558,6 @@
     }
   }
 
-  /* ========= 键盘控制 ========= */
   document.addEventListener('keydown', (e) => {
     if (!lightbox.classList.contains('active')) return;
     if (e.key === 'Escape') closeLightbox();
@@ -595,7 +565,6 @@
     if (e.key === 'ArrowRight') nextImage();
   });
 
-  /* ========= 初始化 ========= */
   document.addEventListener('DOMContentLoaded', () => {
     subNavContainer.classList.add('expanded');
     renderSubMenu('confirm', true);
