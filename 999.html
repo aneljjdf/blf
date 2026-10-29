@@ -39,6 +39,8 @@
       padding: 60px 5vw 20px 5vw; 
       max-width: 1000px; 
       margin: 0 auto; 
+      position: relative;
+      z-index: 10; /* 确保文字列表在正常层级，不被底部遮挡 */
     }
     
     .text-list {
@@ -46,17 +48,15 @@
       flex-direction: column;
     }
     
-    /* 每一行档案：默认纯黑，无边框，无位移 */
     .list-item {
       display: flex;
       align-items: baseline;
       padding: 20px 0;
       cursor: pointer;
       gap: 30px;
-      transition: opacity 0.3s ease; /* 仅对透明度做平滑过渡 */
+      transition: opacity 0.3s ease;
     }
 
-    /* 🟢 触碰/悬浮时，整体降低透明度 */
     .list-item:hover,
     .list-item:active {
       opacity: 0.4;
@@ -72,7 +72,7 @@
 
     .item-brand {
       font-size: 20px;
-      font-weight: 700; /* 恢复加粗，保持黑白对比的张力 */
+      font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--text-main);
@@ -115,11 +115,11 @@
       display: flex;
       justify-content: center;
       z-index: 1100;
-      pointer-events: none;
+      pointer-events: none; /* 关键：外壳不拦截点击，只有内部胶囊拦截 */
     }
 
     .bottom-pill {
-      pointer-events: auto;
+      pointer-events: auto; /* 胶囊本身接收点击 */
       display: flex;
       flex-direction: column;
       background: rgba(255, 255, 255, 0.85);
@@ -296,7 +296,8 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     }
     
-    body.lightbox-open .bar-title { color: #FFF; cursor: default; }
+    body.lightbox-open .bar-title { color: #FFF; cursor: pointer; }
+    body.lightbox-open .bar-title:hover { opacity: 0.7; }
 
     /* ========= 移动端适配 ========= */
     @media (max-width: 768px) {
@@ -359,7 +360,7 @@
     <div class="bottom-pill" id="bottomPill">
       <!-- 顶行：主状态栏 -->
       <div class="pill-main-row">
-        <!-- 左侧标题 -->
+        <!-- 左侧标题（点击强制回到首页状态） -->
         <div class="bar-title" id="bar-title" onclick="goHome()">MUSEUM DEPARTMENT</div>
         
         <!-- 右侧内容 -->
@@ -552,14 +553,26 @@
     lightbox.classList.remove('active');
     bodyEl.style.overflow = '';
     bodyEl.classList.remove('lightbox-open');
+    
+    // 恢复左侧标题为全局标题
     barTitle.textContent = 'MUSEUM DEPARTMENT';
+    
+    // 保持当前主分类的高亮状态与二级菜单显示
+    const btn = document.querySelector(`.segment-btn[data-cat="${activeMainCat}"]`);
+    if (btn) {
+      document.querySelectorAll('.pill-main-row .segment-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      subNavContainer.classList.add('expanded');
+    }
   }
 
+  /* ========= 回到首页（重置为默认确认成立状态） ========= */
   function goHome() {
-    if(bodyEl.classList.contains('lightbox-open')) return; 
-    const confirmBtn = document.querySelector('.segment-btn[data-cat="confirm"]');
-    if (activeMainCat !== 'confirm' || !subNavContainer.classList.contains('expanded')) {
-      handleMainClick(confirmBtn, 'confirm');
+    closeLightbox();
+    // 如果不在首页，重置回默认
+    if (activeMainCat !== 'confirm') {
+       const confirmBtn = document.querySelector('.segment-btn[data-cat="confirm"]');
+       handleMainClick(confirmBtn, 'confirm');
     }
   }
 
