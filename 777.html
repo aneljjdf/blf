@@ -15,6 +15,13 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* 🟢 移动端优化：去除点击闪蓝、禁止长按选中 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
     body {
       font-family: var(--font-main);
       background: var(--bg-body);
@@ -62,7 +69,6 @@
       position: absolute;
       top: 0; bottom: 0; left: 0; right: 0;
       display: flex; align-items: center; justify-content: center;
-      /* ★ 这里的 padding-bottom 预留了 140px，确保大图不被状态栏遮挡 */
       padding: 40px 40px 140px 40px;
       pointer-events: none;
     }
@@ -113,6 +119,7 @@
       min-width: 420px; 
     }
 
+    /* 🟢 大图模式下品牌名过长时的省略号处理 */
     .bar-title {
       color: #000;
       font-size: 13px;
@@ -120,6 +127,9 @@
       letter-spacing: 1.5px;
       text-transform: uppercase;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* 超出显示... */
+      max-width: 150px; /* 限制最大宽度，防止挤压按钮 */
       cursor: pointer;
       transition: color 0.3s;
     }
@@ -128,6 +138,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-shrink: 0; /* 保证右侧按钮不被压缩 */
     }
 
     /* --- 首页模式：主分类按钮 --- */
@@ -209,13 +220,14 @@
     .lightbox-nav {
       display: none;
       align-items: center;
-      gap: 20px;
+      gap: 12px;
+      flex-shrink: 0; /* 保证大图按钮区不被压缩 */
     }
     
     .nav-group {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
     
     .arrow-btn {
@@ -234,6 +246,7 @@
       letter-spacing: 1px;
       min-width: 50px; text-align: center;
       opacity: 0.8;
+      white-space: nowrap;
     }
     
     .close-btn {
@@ -243,6 +256,7 @@
       cursor: pointer; transition: opacity 0.2s;
       padding: 8px 12px;
       opacity: 0.6;
+      white-space: nowrap;
     }
     
     .close-btn:hover { opacity: 1; }
@@ -261,27 +275,37 @@
     
     body.lightbox-open .bar-title { color: #FFF; cursor: default; }
 
-    /* ========= 移动端适配（专门处理大图防遮挡） ========= */
+    /* ========= 移动端适配 ========= */
     @media (max-width: 768px) {
       .gallery-scroll { padding: 20px 20px 20px 20px; }
       .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
       
-      .shared-bottom-bar { bottom: 20px; padding: 0 10px; }
-      .bottom-pill { width: 100%; max-width: 95vw; }
-      .pill-main-row { min-width: auto; gap: 10px; padding: 4px 8px; }
-      
-      .bar-title { font-size: 11px; letter-spacing: 1px; }
-      .segment-btn { padding: 6px 12px; font-size: 11px; }
-      
-      /* ★ 移动端大图容器内边距调整，确保图片在状态栏上方 */
-      .lb-main-area { 
-        padding: 20px 20px 120px 20px; /* 底部留白 120px 绝对安全 */
+      /* 🟢 手机端自适应宽度：不超屏 */
+      .shared-bottom-bar { bottom: 20px; padding: 0 10px; width: 100%; }
+      .bottom-pill { 
+        width: 100%; 
+        max-width: 100%; 
+        border-radius: 20px;
+      }
+      .pill-main-row { 
+        min-width: auto; 
+        gap: 10px; 
+        padding: 4px 8px; 
+        flex-wrap: nowrap; /* 强制不换行 */
       }
       
-      /* 移动端大图状态栏控件微调，使其更好点按 */
+      /* 手机端字号微调 */
+      .bar-title { font-size: 11px; letter-spacing: 1px; max-width: 80px; /* 手机上名字宽度更窄 */ }
+      .segment-btn { padding: 6px 12px; font-size: 11px; }
+      
+      .lb-main-area { padding: 20px 20px 120px 20px; }
+      
+      /* 手机端大图控件紧凑化 */
+      .lightbox-nav { gap: 8px; }
+      .nav-group { gap: 2px; }
       .counter { min-width: 40px; font-size: 11px; }
       .close-btn { font-size: 11px; padding: 6px 8px; }
-      .arrow-btn { width: 32px; height: 32px; } /* 稍微加大点按热区 */
+      .arrow-btn { width: 28px; height: 28px; }
       
       .sub-nav-container.expanded { max-height: 80px; }
       .sub-nav-list { flex-wrap: wrap; justify-content: center; }
@@ -504,7 +528,6 @@
     lightbox.classList.remove('active');
     bodyEl.style.overflow = '';
     bodyEl.classList.remove('lightbox-open');
-    // 关闭大图时恢复默认标题
     barTitle.textContent = 'MUSEUM DEPARTMENT';
   }
 
