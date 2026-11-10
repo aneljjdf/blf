@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NORN9 · 双卡片分离版</title>
+    <style>
+        /* ========== 全局字体与基础设置 ========== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+            text-shadow: none !important;
+            background-image: none !important;
+            font-weight: 400;
+        }
+
+        body {
+            background-color: #111111; 
+            color: #e0e0e0;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+
+        /* ======================================================== */
+        /* ========== 独立卡片 1：主内容区 (Header + 画廊) ========== */
+        /* ======================================================== */
+        .main-card {
+            max-width: 1000px;
+            margin: 40px auto 30px auto; 
+            background-color: #1d1d1d; 
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            border: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column; 
+        }
+
+        /* ========== 头部区域 ========== */
+        header { 
+            text-align: center; 
+            padding: 70px 40px 50px 40px; 
+        }
+        header h1 {
+            margin: 0; 
+            font-family: 'Didot', 'Bodoni MT', 'Playfair Display', 'Times New Roman', serif;
+            font-size: 46px; 
+            font-weight: 400; 
+            letter-spacing: 10px; 
+            color: #ffffff;
+            text-indent: 10px; 
+            cursor: pointer; 
+            display: inline-block; 
+            transition: color 0.2s ease;
+        }
+        header h1:hover { color: #888888; }
+        header p { 
+            margin: 16px 0 38px 0; 
+            font-size: 11px; 
+            font-weight: 300; 
+            letter-spacing: 1.5px; 
+            color: #888888; 
+        }
+
+        /* ========== 顶部导航 ========== */
+        nav { display: flex; justify-content: center; align-items: stretch; gap: 10px; flex-wrap: wrap; }
+        .nav-item { position: relative; display: flex; width: 138px; height: 56px; }
+        .nav-link {
+            text-decoration: none; 
+            color: #cccccc; 
+            border: 1px solid #333333; 
+            background-color: #222222;
+            padding: 8px 12px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.2s ease;
+            width: 100%; 
+            height: 100%; 
+            cursor: pointer; 
+        }
+        .nav-link .main-text { font-size: 13px; font-weight: 500; letter-spacing: 2px; white-space: nowrap; }
+        .nav-link .sub-text { font-size: 9px; font-weight: 300; margin-top: 5px; color: #777777; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        .nav-item:hover > .nav-link { background-color: #ffffff; color: #111111; border-color: #ffffff; }
+        .nav-item:hover > .nav-link .sub-text { color: #555555; }
+
+        /* 下拉菜单 */
+        .dropdown {
+            display: none; 
+            position: absolute; 
+            background-color: #222222; 
+            z-index: 10; 
+            flex-direction: column;
+            border: 1px solid #333333; 
+            border-top: none; 
+            width: 100%; 
+            white-space: nowrap; 
+            top: 100%; 
+            left: 0;
+        }
+        .nav-item:hover > .dropdown, .dropdown-item:hover > .dropdown { display: flex; }
+        .dropdown a, .sub-menu-title {
+            text-decoration: none; 
+            color: #cccccc; 
+            padding: 11px 20px; 
+            font-size: 12px; 
+            text-align: center; 
+            border-bottom: 1px solid #333333; 
+            transition: background-color 0.15s ease;
+            cursor: pointer; 
+            display: block; 
+        }
+        .dropdown a:last-child, .dropdown-item:last-child { border-bottom: none; }
+        .dropdown a:hover, .dropdown-item:hover > .sub-menu-title { background-color: #333333; color: #ffffff; }
+        .dropdown-item { padding: 0; text-align: left; }
+        .dropdown-item > .dropdown { top: 0; left: 100%; border-top: 1px solid #333333; width: auto; min-width: 120px; }
+
+        /* ========== 主视觉图区域 ========== */
+        .hero-image { width: 100%; padding-top: 45%; background-color: #2a2a2a; position: relative; }
+        .hero-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #777777; font-size: 20px; font-weight: 300; letter-spacing: 2px;
+        }
+
+        /* ========== 子页面 ========== */
+        .sub-page { 
+            display: none; 
+            padding: 0 60px 70px 60px; 
+            background-color: #1d1d1d; 
+            min-height: 500px; 
+        }
+        
+        .divider-line {
+            width: 100%;
+            height: 1px;
+            background-color: #333333;
+            margin-top: 50px; 
+            margin-bottom: 40px; 
+        }
+
+        .sub-page-header {
+            text-align: left; 
+            margin-top: 0;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .sub-page h2 {
+            font-size: 18px; font-weight: 500; letter-spacing: 2px; color: #ffffff;
+            margin: 0;
+        }
+        
+        .sub-page-subtitle {
+            font-size: 12px;
+            font-weight: 300;
+            color: #888888;
+            letter-spacing: 3px;
+        }
+
+        /* ========== 画廊网格 ========== */
+        .vogue-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 24px; 
+            margin: 0; 
+        }
+        .vogue-thumb { cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease; text-align: left; }
+        .vogue-thumb:hover { opacity: 0.8; transform: translateY(-2px); }
+
+        .img-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4; 
+            background-color: #2a2a2a;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .thumb-caption { font-size: 12px; font-weight: 400; color: #888888; letter-spacing: 1px; text-align: center; }
+
+
+        /* ======================================================== */
+        /* ========== 独立卡片 2：下方分离的“报告”卡片 ========== */
+        /* ======================================================== */
+        .epilogue-card {
+            display: none; 
+            max-width: 1000px;
+            margin: 0 auto 40px auto; 
+            background-color: #161616; 
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid #2a2a2a;
+            padding: 80px 60px; 
+        }
+
+        .epilogue-block { margin-bottom: 40px; }
+        .epilogue-block:last-child { margin-bottom: 0; }
+
+        .epilogue-heading {
+            font-size: 12px;
+            font-weight: 500;
+            color: #666666; 
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .epilogue-content {
+            font-size: 14px;
+            line-height: 2;
+            color: #999999;
+            letter-spacing: 1.5px;
+            max-width: 800px;
+        }
+
+
+        /* ========== 弹窗 Lightbox ========== */
+        #imageLightbox {
+            display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100vw; height: 100vh;
+            background-color: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            align-items: center; justify-content: center; margin: 0; padding: 40px;
+        }
+
+        .close-btn {
+            position: absolute; top: 30px; right: 40px; color: #ffffff; font-size: 36px; font-weight: 300;
+            cursor: pointer; transition: color 0.15s ease; z-index: 100001; line-height: 1;
+        }
+        .close-btn:hover { color: #888888; }
+
+        .lightbox-content {
+            display: flex;
+            flex-direction: row; 
+            align-items: flex-end;
+            justify-content: center;
+            gap: 50px; 
+            max-width: 1200px;
+            max-height: 90vh;
+            width: 100%;
+        }
+
+        .info-card {
+            background-color: #1d1d1d; 
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 50px 60px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .evidence-panel {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .lightbox-mini-thumb {
+            width: 80px;
+            height: 106px;
+            object-fit: cover;
+            border: 1px solid #444444;
+            background-color: #2a2a2a;
+            margin-right: 30px;
+            border-radius: 4px;
+        }
+
+        .info-list { display: flex; flex-direction: column; align-items: flex-start; }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #cccccc;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            white-space: nowrap;
+        }
+        .info-item:last-child { margin-bottom: 0; }
+
+        .info-label {
+            color: #666666;
+            font-size: 11px;
+            margin-right: 16px;
+            letter-spacing: 1px;
+            min-width: 50px; 
+        }
+
+        /* 强制品牌名全大写 */
+        #lightbox-brand {
+            text-transform: uppercase;
+        }
+
+        .info-brand { font-weight: 500; color: #ffffff; font-size: 15px; }
+        .info-category { color: #999999; font-size: 12px; }
+        .info-reason { color: #aaaaaa; font-style: italic; }
+
+        #lightbox-img {
+            max-width: 60vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border: 1px solid #333333;
+            background-color: #1d1d1d;
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        /* ========== 响应式与移动端适配 ========== */
+        @media (max-width: 768px) {
+            .main-card { margin: 0 0 20px 0; border-radius: 0; border: none; min-height: auto; }
+            .epilogue-card { margin: 0 0 20px 0; border-radius: 0; border-left: none; border-right: none; padding: 50px 20px; }
+            .sub-page { padding: 0 20px 40px 20px; }
+            .divider-line { margin-top: 30px; margin-bottom: 30px; }
+            
+            .vogue-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+            .sub-page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            
+            .lightbox-content { flex-direction: column; align-items: center; gap: 20px; }
+            .info-card { padding: 30px; margin-bottom: 0; width: 100%; }
+            .evidence-panel { flex-direction: column; align-items: center; text-align: center; }
+            .info-list { align-items: center; margin-top: 20px; }
+            .info-label { display: none; } 
+            .lightbox-mini-thumb { margin-right: 0; margin-bottom: 15px; }
+            #lightbox-img { max-width: 95vw; max-height: 55vh; }
+            .close-btn { top: 15px; right: 20px; font-size: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================================== -->
+<!-- 卡片 1：主交互区域 -->
+<!-- ========================================== -->
+<div class="main-card">
+    <header>
+        <h1 onclick="switchView('home')">NORN9</h1>
+        <p>ノルン＋ノネット ラスト イーラ for iOS &amp; Android</p>
+
+        <nav>
+            <!-- 1. 基准 -->
+            <div class="nav-item">
+                <div class="nav-link">
+                    <span class="main-text">基准</span>
+                    <span class="sub-text">APPROVED</span>
+                </div>
+                <div class="dropdown">
+                    <a href="javascript:void(0);" onclick="switchView('ss-section')">SS</a>
+                    <a href="#">FW</a>
+                </div>
+            </div>
+
+            <!-- 2. 侧写 -->
+            <div class="nav-item">
+                <div class="nav-link">
+                    <span class="main-text">侧写</span>
+                    <span class="sub-text">PROFILING</span>
+                </div>
+                <div class="dropdown">
+                    <a href="javascript:void(0);" onclick="switchView('correction-section')">精进</a>
+                    <a href="javascript:void(0);" onclick="switchView('failed-section')">边界</a>
+                    <a href="javascript:void(0);" onclick="switchView('eliminated-section')">变迁</a>
+                </div>
+            </div>
+
+            <!-- 3. 单项 -->
+            <div class="nav-item">
+                <div class="nav-link">
+                    <span class="main-text">单项</span>
+                    <span class="sub-text">SINGLE</span>
+                </div>
+                <div class="dropdown">
+                    <a href="javascript:void(0);" onclick="switchView('outerwear-section')">外套</a>
+                    <a href="javascript:void(0);" onclick="switchView('tops-section')">上装</a>
+                    <a href="javascript:void(0);" onclick="switchView('bottoms-section')">下装</a>
+                </div>
+            </div>
+
+            <!-- 4. 杰出 -->
+            <div class="nav-item">
+                <a href="javascript:void(0);" class="nav-link" onclick="switchView('outstanding-section')">
+                    <span class="main-text">杰出</span>
+                    <span class="sub-text">OUTSTANDING</span>
+                </a>
+            </div>
+
+            <!-- 5. 廿六年夏 -->
+            <div class="nav-item">
+                <a href="javascript:void(0);" class="nav-link">
+                    <span class="main-text">廿六年夏</span>
+                    <span class="sub-text">SUMMER '26</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 首页 -->
+    <div id="home-section">
+        <div class="hero-image">
+            <div class="hero-text">[主视觉图区域]</div>
+        </div>
+        <div style="padding: 60px 60px 100px 60px; text-align: center; color: #777777; font-size: 13px; font-weight: 300; letter-spacing: 1px;">
+            这里是首页的其他内容...
+        </div>
+    </div>
+
+    <!-- 精进 -->
+    <div id="correction-section" class="sub-page">
+        <div class="divider-line" id="scroll-correction"></div>
+        <div class="sub-page-header">
+            <h2>精进</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <div style="grid-column: 1 / -1; text-align: center; color: #666666; font-size: 13px; font-weight: 300; letter-spacing: 1px; padding: 40px 0;">
+                [ 暂无图片 ]
+            </div>
+        </div>
+    </div>
+
+    <!-- 边界 -->
+    <div id="failed-section" class="sub-page">
+        <div class="divider-line" id="scroll-failed"></div>
+        <div class="sub-page-header">
+            <h2>边界</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <!-- 对应表格：JJFFDH.JPG | ENFANTS RICHES DÉPRIMÉS | 边界 | f23 -->
+            <div class="vogue-thumb" onclick="openLightbox('images/JJFFDH.JPG', 'ENFANTS RICHES DÉPRIMÉS · f23', '边界', '缩略图看着很端庄,但大图不酷')">
+                <div class="img-wrapper">
+                    <img src="images/JJFFDH.JPG" alt="边界 01" onerror="this.src='https://via.placeholder.com/300x400/2a2a2a/666666?text=JJFFDH.JPG+未找到';">
+                </div>
+                <div class="thumb-caption">01</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 变迁 -->
+    <div id="eliminated-section" class="sub-page">
+        <div class="divider-line" id="scroll-eliminated"></div>
+        <div class="sub-page-header">
+            <h2>变迁</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <!-- 无内容 -->
+        </div>
+    </div>
+
+    <!-- 外套 -->
+    <div id="outerwear-section" class="sub-page">
+        <div class="divider-line" id="scroll-outerwear"></div>
+        <div class="sub-page-header">
+            <h2>外套</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <!-- 对应表格：EYJQ8150.JPG | RICK OWENS | 外套 | s26 -->
+            <div class="vogue-thumb" onclick="openLightbox('images/EYJQ8150.JPG', 'RICK OWENS · s26', '外套')">
+                <div class="img-wrapper">
+                    <img src="images/EYJQ8150.JPG" alt="外套 01" onerror="this.src='https://via.placeholder.com/300x400/2a2a2a/666666?text=EYJQ8150.JPG+未找到';">
+                </div>
+                <div class="thumb-caption">01</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上装 -->
+    <div id="tops-section" class="sub-page">
+        <div class="divider-line" id="scroll-tops"></div>
+        <div class="sub-page-header">
+            <h2>上装</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <!-- 对应表格：HFHCFSAA.JPG | ENFANTS RICHES DÉPRIMÉS | 上装 | s24 -->
+            <div class="vogue-thumb" onclick="openLightbox('images/HFHCFSAA.JPG', 'ENFANTS RICHES DÉPRIMÉS · s24', '上装')">
+                <div class="img-wrapper">
+                    <img src="images/HFHCFSAA.JPG" alt="上装 01" onerror="this.src='https://via.placeholder.com/300x400/2a2a2a/666666?text=HFHCFSAA.JPG+未找到';">
+                </div>
+                <div class="thumb-caption">01</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下装 -->
+    <div id="bottoms-section" class="sub-page">
+        <div class="divider-line" id="scroll-bottoms"></div>
+        <div class="sub-page-header">
+            <h2>下装</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <!-- 对应表格：SIMN9525.JPG | RICK OWENS | 下装 | f25 -->
+            <div class="vogue-thumb" onclick="openLightbox('images/SIMN9525.JPG', 'RICK OWENS · f25', '下装')">
+                <div class="img-wrapper">
+                    <img src="images/SIMN9525.JPG" alt="下装 01" onerror="this.src='https://via.placeholder.com/300x400/2a2a2a/666666?text=SIMN9525.JPG+未找到';">
+                </div>
+                <div class="thumb-caption">01</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SS -->
+    <div id="ss-section" class="sub-page">
+        <div class="divider-line" id="scroll-ss"></div>
+        <div class="sub-page-header">
+            <h2>SS</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <!-- 对应表格：FHGGN.JPG | NAMACHEKO | 基准 | S23 -->
+            <div class="vogue-thumb" onclick="openLightbox('images/FHGGN.JPG', 'NAMACHEKO · S23', '基准')">
+                <div class="img-wrapper">
+                    <img src="images/FHGGN.JPG" alt="SS 01" onerror="this.src='https://via.placeholder.com/300x400/2a2a2a/666666?text=FHGGN.JPG+未找到';">
+                </div>
+                <div class="thumb-caption">01</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 杰出 -->
+    <div id="outstanding-section" class="sub-page">
+        <div class="divider-line" id="scroll-outstanding"></div>
+        <div class="sub-page-header">
+            <h2>杰出</h2>
+            <a href="#" class="sub-page-subtitle" style="text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">查看全部</a>
+        </div>
+        <div class="vogue-grid">
+            <div style="grid-column: 1 / -1; text-align: center; color: #666666; font-size: 13px; font-weight: 300; letter-spacing: 1px; padding: 40px 0;">
+                [ 品牌收纳区，多次成立被提名的品牌将展示于此 ]
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ========================================== -->
+<!-- 卡片 2：物理断开的“报告”独立卡片 -->
+<!-- ========================================== -->
+<div id="epilogue-block" class="epilogue-card">
+    <!-- 第一块：花语 -->
+    <div class="epilogue-block">
+        <div class="epilogue-heading">花语 / FLOWER LANGUAGE</div>
+        <div id="epilogue-text" class="epilogue-content"></div>
+    </div>
+    
+    <!-- 第二块：概率总结 -->
+    <div id="epilogue-summary-block" class="epilogue-block">
+        <div class="epilogue-heading">概率总结 / PROBABILITY SUMMARY</div>
+        <div id="epilogue-summary-text" class="epilogue-content"></div>
+    </div>
+</div>
+
+<!-- 弹窗 -->
+<div id="imageLightbox" onclick="closeLightbox(event)">
+    <span class="close-btn" onclick="closeLightbox(event)">&times;</span>
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+        
+        <div class="info-card">
+            <div class="evidence-panel">
+                <img id="lightbox-mini" class="lightbox-mini-thumb" src="" alt="缩略图" style="display:none;">
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">品牌</span>
+                        <span id="lightbox-brand" class="info-brand"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">类别</span>
+                        <span id="lightbox-category" class="info-category"></span>
+                    </div>
+                    <div class="info-item" id="reason-row">
+                        <span class="info-label">修正指令</span>
+                        <span id="lightbox-reason" class="info-reason"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <img id="lightbox-img" src="" alt="大图" style="display:none;">
+    </div>
+</div>
+
+<script>
+    const epilogueData = {
+        'correction-section': {
+            text: '距离完美仅一步之遥。<br>它们是能够被微调、被重塑的璞玉，只因某处细节未能尽善尽美，便得到了具体的修改指引。',
+            summary: '' 
+        },
+        'failed-section': {
+            text: '宁缺毋滥，但留有一线生机。<br>虽然给出指令也不会通过，但它们具备在芸芸众生中被‘多一分审视’与‘提及’的特质。',
+            summary: '大多数都是‘只可远观’，放大后就不能看了。'
+        },
+        'eliminated-section': {
+            text: '曾经耀眼，但未能经受住时间回顾。<br>它们曾被选中过，但在重新审视的凝视下，终究因为某种经不起推敲的原因，黯然退场。',
+            summary: '' 
+        }
+    };
+
+    function switchView(viewName) {
+        document.getElementById('home-section').style.display = 'none';
+        document.getElementById('failed-section').style.display = 'none';
+        document.getElementById('outerwear-section').style.display = 'none';
+        document.getElementById('tops-section').style.display = 'none';
+        document.getElementById('bottoms-section').style.display = 'none';
+        document.getElementById('ss-section').style.display = 'none';
+        document.getElementById('eliminated-section').style.display = 'none';
+        document.getElementById('correction-section').style.display = 'none';
+        document.getElementById('outstanding-section').style.display = 'none';
+        
+        document.getElementById('epilogue-block').style.display = 'none';
+
+        if (viewName === 'home') {
+            document.getElementById('home-section').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } 
+        else {
+            document.getElementById(viewName).style.display = 'block';
+
+            if (epilogueData[viewName]) {
+                document.getElementById('epilogue-block').style.display = 'block';
+                document.getElementById('epilogue-text').innerHTML = epilogueData[viewName].text;
+                
+                const summaryBlock = document.getElementById('epilogue-summary-block');
+                if (epilogueData[viewName].summary) {
+                    document.getElementById('epilogue-summary-text').innerHTML = epilogueData[viewName].summary;
+                    summaryBlock.style.display = 'block';
+                } else {
+                    summaryBlock.style.display = 'none';
+                }
+            }
+
+            let scrollId = '';
+            if (viewName === 'correction-section') scrollId = 'scroll-correction';
+            else if (viewName === 'failed-section') scrollId = 'scroll-failed';
+            else if (viewName === 'eliminated-section') scrollId = 'scroll-eliminated';
+            else if (viewName === 'outerwear-section') scrollId = 'scroll-outerwear';
+            else if (viewName === 'tops-section') scrollId = 'scroll-tops';
+            else if (viewName === 'bottoms-section') scrollId = 'scroll-bottoms';
+            else if (viewName === 'ss-section') scrollId = 'scroll-ss';
+            else if (viewName === 'outstanding-section') scrollId = 'scroll-outstanding';
+
+            const scrollTarget = document.getElementById(scrollId);
+            
+            if (scrollTarget) {
+                const yOffset = -20; 
+                const y = scrollTarget.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({top: y, behavior: 'smooth'});
+            }
+        }
+    }
+
+    function openLightbox(imgSrc, brandName, categoryName, reasonText) {
+        const lightbox = document.getElementById('imageLightbox');
+        const img = document.getElementById('lightbox-img');
+        const miniImg = document.getElementById('lightbox-mini');
+
+        const brandEl = document.getElementById('lightbox-brand');
+        const categoryEl = document.getElementById('lightbox-category');
+        const reasonEl = document.getElementById('lightbox-reason');
+        const reasonRow = document.getElementById('reason-row');
+
+        if (imgSrc) {
+            img.src = imgSrc;
+            img.style.display = 'block';
+            miniImg.src = imgSrc;
+            miniImg.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+            miniImg.style.display = 'none';
+        }
+
+        brandEl.textContent = brandName || '';
+        categoryEl.textContent = categoryName || '';
+
+        if (reasonText) {
+            const reasons = reasonText.split(/[,，]/).map(r => r.trim()).filter(r => r);
+            reasonEl.textContent = reasons.join(' · ');
+            reasonRow.style.display = 'flex'; 
+        } else {
+            reasonEl.textContent = '暂无记录';
+            reasonRow.style.display = 'flex'; 
+        }
+
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+        if (e) e.stopPropagation();
+        const lightbox = document.getElementById('imageLightbox');
+        lightbox.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        setTimeout(() => {
+            document.getElementById('lightbox-img').src = '';
+            document.getElementById('lightbox-mini').src = '';
+        }, 100);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        switchView('home');
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLightbox();
+    });
+</script>
+</body>
+</html>
